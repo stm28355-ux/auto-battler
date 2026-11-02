@@ -643,3 +643,7 @@ body[data-view="rules"] .help-btn { border-color: #6d6235; color: var(--accent);
   .env-label, .help-label { display: none; }
 }
 .home-notice { margin: 16px 0 0; padding: 8px 14px; border-radius: 10px; background: #2c3a2f; border: 1px solid #3f8f67; color: #7bd88f; font-size: 0.9rem; }
+
+/* 駒作成：効果の効く範囲 */
+.effect-hint { flex-basis: 100%; font-size: 0.8rem; }
+

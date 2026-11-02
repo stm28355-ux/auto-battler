@@ -12,21 +12,20 @@ import { createTeamStore, listBattleTeams, memoryStorage } from '../src/storage/
 const catalog = createCatalog();
 const pool = PRESET_TEAMS.map((team) => ({ id: `preset:${team.id}`, team }));
 
-test('プリセットは9チーム。ボードごとに やさしい・ふつう・つよい が1つずつある', () => {
-  assert.equal(PRESET_TEAMS.length, 9);
-  assert.equal(new Set(PRESET_TEAMS.map((t) => t.id)).size, 9);
+test('プリセット：IDが重ならず、ボードごとに ふつう・つよい がある（やさしいはない）', () => {
+  assert.equal(new Set(PRESET_TEAMS.map((t) => t.id)).size, PRESET_TEAMS.length);
+  for (const t of PRESET_TEAMS) assert.ok(Object.hasOwn(TIERS, t.tier) && t.tier !== 'easy', t.id);
   for (const board of Object.keys(BOARDS)) {
-    for (const tier of Object.keys(TIERS)) {
-      assert.equal(PRESET_TEAMS.filter((t) => t.board === board && t.tier === tier).length, 1, `${board} ${tier}`);
+    for (const tier of ['normal', 'hard']) {
+      assert.ok(PRESET_TEAMS.some((t) => t.board === board && t.tier === tier), `${board} ${tier}`);
     }
   }
 });
 
-test('プリセットはすべて対戦に使え、同じボードの中でコストが やさしい < ふつう < つよい', () => {
-  for (const t of PRESET_TEAMS) assert.deepEqual(validateTeam(t, catalog), [], t.id);
-  for (const board of Object.keys(BOARDS)) {
-    const cost = (tier) => teamCost(PRESET_TEAMS.find((t) => t.board === board && t.tier === tier), catalog);
-    assert.ok(cost('easy') < cost('normal') && cost('normal') < cost('hard'), board);
+test('プリセットはすべて対戦に使え、コストをほぼ使い切る（上限の85%以上）', () => {
+  for (const t of PRESET_TEAMS) {
+    assert.deepEqual(validateTeam(t, catalog), [], t.id);
+    assert.ok(teamCost(t, catalog) >= BOARDS[t.board].costCap * 0.85, `${t.id} ${teamCost(t, catalog)}`);
   }
 });
 
@@ -40,7 +39,7 @@ test('強さを指定すると、その強さの中から引く', () => {
 test('おまかせなら全体から引き、すべてのチームが出る', () => {
   const rng = createRng(2);
   const seen = new Set(Array.from({ length: 500 }, () => pickOpponent(pool, 'any', rng).id));
-  assert.equal(seen.size, 9);
+  assert.equal(seen.size, PRESET_TEAMS.length);
 });
 
 test('直前の相手は避けるが、候補が1つだけなら同じ相手でもよい。候補がなければ null', () => {

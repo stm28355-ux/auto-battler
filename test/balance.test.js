@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { PRESET_TEAMS } from '../src/data/presetTeams.js';
 import assert from 'node:assert/strict';
 import { BALANCE, NEUTRAL_BALANCE, setBalance, useBalance } from '../src/data/balance.js';
 import { BOARDS } from '../src/data/boards.js';
@@ -42,7 +43,7 @@ test('シミュレーションは同じ種なら同じ結果で、集計の数�
 
 test('プリセット同士の総当たりもシミュレーションできる', () => {
   const { rows } = simulate({ matches: 1, seed: 1, mode: 'presets' });
-  assert.equal(rows.length, 9 * 8);
+  assert.equal(rows.length, PRESET_TEAMS.length * (PRESET_TEAMS.length - 1));
 });
 
 test('調整用の数値は setBalance / useBalance で差し替えられ、存在しない設定は拒否する', () => {

@@ -1,33 +1,65 @@
-import { BALANCE } from '../data/balance.js';
-import { EFFECT_TYPES } from '../data/effects.js';
+import { BALANCE, EFFECT_COST_DEFAULTS } from '../data/balance.js';
+import { EFFECT_TYPES, ON_HIT_TYPES } from '../data/effects.js';
 
 // コスト計算（spec §6）。係数は src/data/balance.js にある。
 
 // 0.2 * 5 のような浮動小数の誤差で ceil が1つ上がらないようにする。
 const ceil = (x) => Math.ceil(x - 1e-9);
 
-export function effectCost(e) {
-  const c = BALANCE.cost;
+// 麻痺の対象ごとの重み（何体に効くか）。秒数も数える環境（cost.paralyzeSec がある環境）で使う。
+const PARALYZE_WEIGHT = { front: 1, random: 1, fastest: 1.2, strongest: 1.2, row: 2.5, all: 4 };
+
+// 係数。過去の環境のバランス値にない係数（新しい効果のもの）は、既定値を使う。
+const coef = () => {
+  const c = { ...EFFECT_COST_DEFAULTS };
+  for (const [k, v] of Object.entries(BALANCE.cost)) if (v != null || !(k in c)) c[k] = v;
+  return c;
+};
+
+// 基準キャラ（cost.buffRef。ない環境は HP300・攻撃30・防御30）1体への、能力値を上げる効果の効きめ。速度は1とする
+const BUFF_REF = { hp: 300, atk: 30, def: 30 };
+function buffGain(e, c) {
+  const ref = c.buffRef ?? BUFF_REF;
+  const add = e.mode === 'add';
+  return {
+    hp: (add ? e.value : e.value * ref.hp) / c.hp,
+    atk: (add ? e.value : e.value * ref.atk) / c.atkSpd,
+    def: (add ? e.value : e.value * ref.def) / c.def,
+    spd: (e.value * ref.atk) / c.atkSpd,
+  }[e.stat] ?? 0;
+}
+
+// piece: 効果を持つ駒。「攻撃時」の効果と防御貫通は、攻撃の回数に比例して効くので、
+//   キャラなら攻撃速度倍（cost.onHitSpd がある環境）、道具なら隣のキャラ全員に付くので itemOnHit 倍に数える。
+export function effectCost(e, piece = { kind: 'character', spd: 1 }) {
+  const c = coef();
+  let spread = 1;
+  if (ON_HIT_TYPES.has(e.type) || e.type === 'pierce') {
+    if (piece.kind === 'item') spread = c.itemOnHit ?? 1;
+    else if (c.onHitSpd) spread = piece.spd ?? 1;
+  }
   switch (e.type) {
     case 'poison':
-      return c.poison * e.stacks * e.chance;
+      return spread * c.poison * e.stacks * e.chance;
     case 'paralyze':
-      return c.paralyze * e.chance;
+      return spread * (c.paralyzeSec == null
+        ? c.paralyze * e.chance
+        : c.paralyzeSec * e.chance * e.duration * (PARALYZE_WEIGHT[e.target] ?? 1));
+    case 'curse':
+      return spread * c.curse * e.chance * e.duration;
+    case 'pierce':
+      return spread * c.pierce * e.value;
     case 'adjAtkMult':
       return c.adjAtkMult * e.mult;
     case 'heal':
       return (c.heal * e.amount) / e.interval;
-    case 'rowBuff': {
-      // 基準キャラ（HP300・攻撃30・防御30・速度1）1体への効きめを、同じ行の想定人数ぶん数える
-      const add = e.mode === 'add';
-      const gain = {
-        hp: (add ? e.value : e.value * 300) / c.hp,
-        atk: (add ? e.value : e.value * 30) / c.atkSpd,
-        def: (add ? e.value : e.value * 30) / c.def,
-        spd: (e.value * 30) / c.atkSpd,
-      }[e.stat] ?? 0;
-      return c.rowBuff * gain;
-    }
+    case 'adjBuff':
+    case 'rowBuff':
+    case 'teamBuff':
+      // 効く人数の想定（隣接・同じ行・全員）を掛ける
+      return c[e.type] * buffGain(e, c);
+    case 'pulse':
+      return ((e.status === 'curse' ? c.pulseCurse : c.pulsePoison) * e.amount) / e.interval;
     default:
       return 0;
   }
@@ -35,11 +67,12 @@ export function effectCost(e) {
 
 // コストの内訳。画面で「どの値がいくら効いているか」を見せるために使う。
 export function costBreakdown(piece) {
-  const c = BALANCE.cost;
+  const c = coef();
   const parts = piece.kind === 'character'
     ? [
       { label: 'HP', value: piece.hp / c.hp },
-      { label: '攻撃×攻撃速度', value: (piece.atk * piece.spd) / c.atkSpd },
+      // 1発ごとに防御を引く環境（cost.atkPow がある環境）では、1発が重いほど防御を抜けるので割高にする
+      { label: '攻撃×攻撃速度', value: ((piece.atk * piece.spd) / c.atkSpd) * (c.atkPow ? (piece.atk / c.atkRef) ** c.atkPow : 1) },
       { label: '防御', value: piece.def / c.def },
     ]
     : [
@@ -47,7 +80,7 @@ export function costBreakdown(piece) {
       { label: '防御', value: piece.def / c.itemDef },
     ];
   for (const e of piece.effects ?? []) {
-    parts.push({ label: EFFECT_TYPES[e.type]?.name ?? e.type, value: effectCost(e) });
+    parts.push({ label: EFFECT_TYPES[e.type]?.name ?? e.type, value: effectCost(e, piece) });
   }
   const raw = parts.reduce((sum, p) => sum + p.value, 0);
   const priced = c.scale * raw ** c.curve;

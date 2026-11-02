@@ -30,9 +30,10 @@ test('初期の駒はすべて仕様の範囲内', () => {
 });
 
 test('コスト計算（調整前の式：整数に切り上げ）', neutral(() => {
-  assert.equal(pieceCost(catalog.piece('c_squire')), 2); // 0.55 + 0.625 + 0.4
-  assert.equal(pieceCost(catalog.piece('c_knight')), 3); // 1.125 + 0.5 + 1.2
-  assert.equal(pieceCost(catalog.piece('i_spear')), 2); // 0.75 + 0.72
+  const ch = (o) => ({ kind: 'character', effects: [], ...o });
+  assert.equal(pieceCost(ch({ hp: 220, atk: 25, def: 20, spd: 1 })), 2); // 0.55 + 0.625 + 0.4
+  assert.equal(pieceCost(ch({ hp: 450, atk: 25, def: 60, spd: 0.8 })), 3); // 1.125 + 0.5 + 1.2
+  assert.equal(pieceCost({ kind: 'item', atk: 15, def: 18, effects: [] }), 2); // 0.75 + 0.72
   assert.equal(pieceCost({ kind: 'item', atk: 0, def: 0, effects: [{ type: 'adjAtkMult', mult: 0.2 }] }), 1);
   assert.equal(pieceCost({ kind: 'item', atk: 0, def: 0, effects: [] }), 1); // 最低1
 }));
@@ -69,7 +70,8 @@ test('前線は各行で列がいちばん小さいキャラ。道具は前線�
 
 test('ペンタグラムの前線', () => {
   const t = PRESET_TEAMS.find((p) => p.board === 'pentagram');
-  assert.deepEqual([...frontLiners(t, catalog)], [[1, [1, 3]], [2, [2, 1]], [3, [3, 1]]]);
+  // 毒の結社：(1,3) は道具なので、1行目に前線はいない
+  assert.deepEqual([...frontLiners(t, catalog)], [[2, [2, 1]], [3, [3, 1]]]);
 });
 
 test('チーム検証', neutral(() => {

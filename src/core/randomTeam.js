@@ -73,6 +73,17 @@ export function randomTeam(boardId, pieces, rng, { itemRate = 0.3, spread = 1.4,
     place(best, piece);
   }
 
-  const relics = shuffle(RELICS, rng).slice(0, Math.floor(rng() * (MAX_RELICS + 1))).map((r) => r.id);
+  // 空いたマスは、残りの予算で置ける駒で埋める（キャラのマスはキャラ、道具のマスは道具を優先）。
+  // 置いた駒を高い駒に置き換えることはしない。駒ごとに役割が違うので、置き換えで弱くなることがあるため。
+  const used = new Set(slots.map((s) => posKey(s.pos)));
+  const itemSet = new Set(itemCells.map(posKey));
+  for (const pos of shuffle(board.cells.filter((p) => !used.has(posKey(p))), rng)) {
+    const first = itemSet.has(posKey(pos)) ? 'item' : 'character';
+    const piece = pick(first, 1, budget) ?? pick(first === 'item' ? 'character' : 'item', 1, budget);
+    if (piece) place(pos, piece);
+  }
+
+  // 遺物はコストを使わないので、いつも上限まで持つ
+  const relics = shuffle(RELICS, rng).slice(0, MAX_RELICS).map((r) => r.id);
   return { name: 'ランダム', board: boardId, slots, relics };
 }

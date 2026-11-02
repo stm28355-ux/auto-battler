@@ -1,4 +1,5 @@
 import { BOARDS, posKey } from '../data/boards.js';
+import { PRESET_TEAMS } from '../data/presetTeams.js';
 import { describeEffect } from '../data/effects.js';
 import { createCatalog } from '../core/catalog.js';
 import { createRecord, pickOpponent } from '../core/randomMatch.js';
@@ -134,7 +135,8 @@ export function initBattleScreen({ getTeams }) {
     const u = state.unit;
     const n = (x) => Math.round(x * 10) / 10;
     return `<strong>${escapeHtml(u.piece.icon)} ${escapeHtml(u.piece.name)}</strong> ${tribeTag(u.tribe)}${state.paraSteps > 0 ? ' ❄麻痺中' : ''}<br>`
-      + `HP ${n(u.hp)} ／ 攻撃 ${n(u.atk)}×${n(u.atkMult)} ／ 防御 ${n(u.def)} ／ 攻撃速度 ${n(u.spd)}`
+      + `HP ${n(u.hp)} ／ 攻撃 ${n(u.atk)}${u.atkMult === 1 ? '' : `×${n(u.atkMult)}`} ／ 防御 ${n(u.def)} ／ 攻撃速度 ${n(u.spd)}`
+      + (u.pierce ? ` ／ 防御貫通 ${Math.round(u.pierce * 100)}%` : '')
       + (u.onHit.length ? `<br>${u.onHit.map((e) => escapeHtml(describeEffect(e))).join('<br>')}` : '');
   }
 
@@ -150,7 +152,10 @@ export function initBattleScreen({ getTeams }) {
       const ratio = Math.max(0, side.hp / side.maxHp);
       $(`hp-fill-${key}`).style.width = `${ratio * 100}%`;
       $(`hp-text-${key}`).textContent = `${Math.max(0, Math.round(side.hp))} / ${Math.round(side.maxHp)}（${(ratio * 100).toFixed(1)}%）`;
-      $(`status-${key}`).textContent = side.poison > 0 ? `☠ 毒 ${side.poison}（0.1秒ごと）` : '';
+      $(`status-${key}`).textContent = [
+        side.poison > 0 ? `☠ 毒 ${side.poison}（0.1秒ごと）` : '',
+        side.curseSteps > 0 ? `🕯 呪い 残り${(side.curseSteps * DT).toFixed(1)}秒` : '',
+      ].filter(Boolean).join('　');
       for (const s of side.units) {
         game.views[key].cells.get(posKey(s.unit.pos))?.classList.toggle('cell--para', s.paraSteps > 0);
       }
@@ -192,10 +197,16 @@ export function initBattleScreen({ getTeams }) {
         break;
       case 'paralyze': {
         const foe = other(e.side);
-        logLine(e.side, `${e.t.toFixed(2)}s ${tag(e.side)} ❄ 麻痺${e.seconds}秒 → ${tag(foe)} ${escapeHtml(views[foe].names.get(posKey(e.target)))}`);
-        if (!silent) floater(views[foe].svg, views[foe].cells.get(posKey(e.target)), '❄', 'floater--para');
+        const targets = e.targets ?? [e.target];
+        const names = targets.map((p) => escapeHtml(views[foe].names.get(posKey(p)))).join('・');
+        logLine(e.side, `${e.t.toFixed(2)}s ${tag(e.side)} ❄ 麻痺${e.seconds}秒 → ${tag(foe)} ${names}`);
+        if (!silent) for (const p of targets) floater(views[foe].svg, views[foe].cells.get(posKey(p)), '❄', 'floater--para');
         break;
       }
+      case 'curse':
+        logLine(e.side, `${e.t.toFixed(2)}s ${tag(e.side)} 🕯 呪い${e.seconds}秒 → ${tag(other(e.side))}`);
+        if (!silent) pulse($(`status-${other(e.side)}`), 'status--flash');
+        break;
       case 'heal':
         logLine(e.side, `${e.t.toFixed(2)}s ${tag(e.side)} 💚 回復 +${e.amount}`);
         if (!silent) pulse($(`hpbar-${e.side}`), 'hpbar--heal');
@@ -303,6 +314,10 @@ export function initBattleScreen({ getTeams }) {
     if (mode === 'random' && opponent && $('team-a').value === opponent.id) drawOpponent(); // 自分と同じチームが相手にならないように
   });
   $('tier').addEventListener('change', drawOpponent);
+  // その環境のプリセットにない強さ（Ver.2 の「やさしい」など）は選べないようにする
+  for (const opt of $('tier').options) {
+    if (opt.value !== 'any') opt.hidden = !PRESET_TEAMS.some((t) => t.tier === opt.value);
+  }
   $('pause').addEventListener('click', () => {
     game.paused = !game.paused;
     setButtons();

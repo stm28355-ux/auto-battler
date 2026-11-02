@@ -99,12 +99,12 @@ test('行効果の検査とJSON', () => {
   assert.deepEqual(parsePieceJson(text).pieces[0].effects, [{ type: 'rowBuff', stat: 'def', mode: 'add', value: 10 }]);
 });
 
-test('シナジーに5体・7体の段階があり、中立は1体から効く', () => {
+test('シナジーに5体・7体の段階があり、中立は1体から効く（少ないほど強い）', () => {
   useBalance();
   try {
     for (const [id, tribe] of Object.entries(TRIBES)) {
       const tiers = Object.keys(tribe.bonuses).map(Number);
-      if (id === 'neutral') assert.deepEqual(tiers, [1], id);
+      if (id === 'neutral') assert.deepEqual(tiers, [1, 2, 3], id);
       else assert.deepEqual(tiers, [2, 3, 5, 7], id);
     }
     const catalog = createCatalog();
@@ -112,15 +112,15 @@ test('シナジーに5体・7体の段階があり、中立は1体から効く',
     const syn = Object.fromEntries(activeSynergies(t, catalog).map((s) => [s.tribe, s.tier]));
     assert.deepEqual(syn, { beast: 5, neutral: 1 });
     const [unit] = resolveTeam(team('square', [[[1, 1], 'c_elf']]), catalog).units;
-    close(unit.atk, 25 * 1.1);
+    close(unit.atk, 28 * 1.2); // 中立1体：全能力値+20%
   } finally {
     useBalance(NEUTRAL_BALANCE);
   }
 });
 
-test('各種族のキャラは6体、中立は3体', () => {
+test('各種族のキャラは8体、中立は5体', () => {
   const catalog = createCatalog();
   const count = {};
   for (const p of catalog.pieces()) if (p.kind === 'character') count[p.tribe] = (count[p.tribe] ?? 0) + 1;
-  assert.deepEqual(count, { warrior: 6, mage: 6, beast: 6, machine: 6, neutral: 3 });
+  assert.deepEqual(count, { warrior: 8, mage: 8, beast: 8, machine: 8, neutral: 5 });
 });

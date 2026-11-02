@@ -1,0 +1,86 @@
+{
+  "format": "auto-battler/team",
+  "version": 1,
+  "env": "v2",
+  "team": {
+    "name": "毒魔術",
+    "board": "pentagram",
+    "relics": [
+      "r_hourglass",
+      "r_spring",
+      "r_amulet"
+    ],
+    "slots": [
+      {
+        "pos": [
+          4,
+          3
+        ],
+        "pieceId": "i_vial"
+      },
+      {
+        "pos": [
+          2,
+          1
+        ],
+        "pieceId": "c_knight"
+      },
+      {
+        "pos": [
+          2,
+          2
+        ],
+        "pieceId": "c_apprentice"
+      },
+      {
+        "pos": [
+          2,
+          3
+        ],
+        "pieceId": "c_hexer"
+      },
+      {
+        "pos": [
+          2,
+          4
+        ],
+        "pieceId": "c_apprentice"
+      },
+      {
+        "pos": [
+          2,
+          5
+        ],
+        "pieceId": "c_witch"
+      },
+      {
+        "pos": [
+          3,
+          1
+        ],
+        "pieceId": "c_knight"
+      },
+      {
+        "pos": [
+          3,
+          2
+        ],
+        "pieceId": "c_apprentice"
+      },
+      {
+        "pos": [
+          3,
+          3
+        ],
+        "pieceId": "c_hexer"
+      },
+      {
+        "pos": [
+          3,
+          4
+        ],
+        "pieceId": "c_apprentice"
+      }
+    ]
+  }
+}

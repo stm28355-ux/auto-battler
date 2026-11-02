@@ -1,0 +1,65 @@
+{
+  "format": "auto-battler/team",
+  "version": 1,
+  "env": "v2",
+  "team": {
+    "name": "大魔術",
+    "board": "honeycomb",
+    "relics": [
+      "r_grimoire",
+      "r_whetstone",
+      "r_amulet"
+    ],
+    "slots": [
+      {
+        "pos": [
+          1,
+          2
+        ],
+        "pieceId": "c_dragonkin"
+      },
+      {
+        "pos": [
+          2,
+          1
+        ],
+        "pieceId": "c_knight"
+      },
+      {
+        "pos": [
+          3,
+          2
+        ],
+        "pieceId": "c_cursemaster"
+      },
+      {
+        "pos": [
+          1,
+          4
+        ],
+        "pieceId": "c_sorcerer"
+      },
+      {
+        "pos": [
+          2,
+          3
+        ],
+        "pieceId": "c_pyromancer"
+      },
+      {
+        "pos": [
+          2,
+          5
+        ],
+        "pieceId": "c_pyromancer"
+      },
+      {
+        "pos": [
+          3,
+          4
+        ],
+        "pieceId": "c_sorcerer"
+      }
+    ]
+  }
+}

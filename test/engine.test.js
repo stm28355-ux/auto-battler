@@ -6,6 +6,7 @@ import { createBattle, runBattle } from '../src/engine/battle.js';
 import { resolveTeam } from '../src/engine/resolve.js';
 import { createRng } from '../src/engine/rng.js';
 import { BALANCE, NEUTRAL_BALANCE, useBalance } from '../src/data/balance.js';
+import { LATEST, applyEnvironment } from '../src/data/environment.js';
 
 // 戦闘の仕組みそのものを確かめるテスト。調整後の数値ではなく、調整前の数値（ダメージ式どおり・毒は1蓄積1ダメージ）で行う。
 useBalance(NEUTRAL_BALANCE);
@@ -195,7 +196,10 @@ test('回復は最大HPを超えない', () => {
   assert.equal(r.hp.a, 1000);
 });
 
-test('実効ステータス：隣接する道具・遺物・種族シナジー・隣接攻撃倍率', () => {
+test('実効ステータス：隣接する道具・遺物・種族シナジー・隣接攻撃倍率（Ver.1 の駒で確かめる）', () => {
+  applyEnvironment('v1');
+  useBalance(NEUTRAL_BALANCE);
+  try {
   const catalog = createCatalog();
   const t = resolveTeam(team([[[1, 1], 'c_squire'], [[1, 2], 'i_sword'], [[2, 1], 'i_banner']], ['r_whetstone']), catalog);
   const squire = t.units[0];
@@ -208,6 +212,10 @@ test('実効ステータス：隣接する道具・遺物・種族シナジー�
 
   const machines = resolveTeam(team([[[1, 1], 'c_drone'], [[2, 1], 'c_drone']], ['r_heart']), catalog);
   close(machines.units[0].hp, 150 * 1.2); // 機械2体(+10%) + 遺物(+10%)
+  } finally {
+    applyEnvironment(LATEST.id);
+    useBalance(NEUTRAL_BALANCE);
+  }
 });
 
 test('道具の毒は隣接するキャラの攻撃に乗る。魔導シナジーで付与量が増える', () => {

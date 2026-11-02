@@ -25,9 +25,14 @@ const PIECE_FIELDS = {
 const EFFECT_FIELDS = {
   poison: ['stacks', 'chance'],
   paralyze: ['target', 'duration', 'chance'],
+  curse: ['duration', 'chance'],
+  pierce: ['value'],
   adjAtkMult: ['mult'],
+  adjBuff: ['stat', 'mode', 'value'],
   rowBuff: ['stat', 'mode', 'value'],
+  teamBuff: ['stat', 'mode', 'value'],
   heal: ['amount', 'interval'],
+  pulse: ['status', 'amount', 'interval'],
 };
 const MAX_EFFECTS_READ = 8; // 多すぎる配列は、検査の前に切り詰める
 const MAX_ICON_CODEPOINTS = 8;

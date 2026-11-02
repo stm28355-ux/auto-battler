@@ -1,0 +1,64 @@
+{
+  "format": "auto-battler/team",
+  "version": 1,
+  "team": {
+    "name": "キングダム",
+    "board": "honeycomb",
+    "slots": [
+      {
+        "pos": [
+          1,
+          2
+        ],
+        "pieceId": "c_dragoon"
+      },
+      {
+        "pos": [
+          1,
+          4
+        ],
+        "pieceId": "c_squire"
+      },
+      {
+        "pos": [
+          2,
+          1
+        ],
+        "pieceId": "c_knight"
+      },
+      {
+        "pos": [
+          2,
+          3
+        ],
+        "pieceId": "c_general"
+      },
+      {
+        "pos": [
+          2,
+          5
+        ],
+        "pieceId": "c_berserker"
+      },
+      {
+        "pos": [
+          3,
+          2
+        ],
+        "pieceId": "c_dragoon"
+      },
+      {
+        "pos": [
+          3,
+          4
+        ],
+        "pieceId": "c_squire"
+      }
+    ],
+    "relics": [
+      "r_warhorn",
+      "r_amulet",
+      "r_spring"
+    ]
+  }
+}

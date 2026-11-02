@@ -1,0 +1,64 @@
+{
+  "format": "auto-battler/team",
+  "version": 1,
+  "team": {
+    "name": "野生火力",
+    "board": "honeycomb",
+    "slots": [
+      {
+        "pos": [
+          1,
+          2
+        ],
+        "pieceId": "c_behemoth"
+      },
+      {
+        "pos": [
+          1,
+          4
+        ],
+        "pieceId": "c_hawk"
+      },
+      {
+        "pos": [
+          2,
+          1
+        ],
+        "pieceId": "c_behemoth"
+      },
+      {
+        "pos": [
+          2,
+          3
+        ],
+        "pieceId": "i_blade"
+      },
+      {
+        "pos": [
+          2,
+          5
+        ],
+        "pieceId": "c_hawk"
+      },
+      {
+        "pos": [
+          3,
+          2
+        ],
+        "pieceId": "c_behemoth"
+      },
+      {
+        "pos": [
+          3,
+          4
+        ],
+        "pieceId": "c_hawk"
+      }
+    ],
+    "relics": [
+      "r_totem",
+      "r_whetstone",
+      "r_amulet"
+    ]
+  }
+}

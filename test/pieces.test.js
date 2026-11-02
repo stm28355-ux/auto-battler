@@ -55,7 +55,7 @@ test('JSONの種類・バージョン違い、壊れたJSONを理由つきで拒
 
 test('数値：範囲外・文字列・無限大・小数の付与量を拒否する', () => {
   assert.match(errorsOf(chara({ hp: 99 })), /hp/);
-  assert.match(errorsOf(chara({ atk: 101 })), /atk/);
+  assert.match(errorsOf(chara({ atk: 201 })), /atk/);
   assert.match(errorsOf(chara({ spd: 0.1 })), /spd/);
   assert.match(errorsOf(chara({ hp: '300' })), /hp/);
   assert.match(errorsOf(chara({ hp: null })), /hp/);

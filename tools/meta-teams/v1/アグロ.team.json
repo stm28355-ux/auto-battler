@@ -1,0 +1,78 @@
+{
+  "format": "auto-battler/team",
+  "version": 1,
+  "team": {
+    "name": "アグロ",
+    "board": "square",
+    "slots": [
+      {
+        "pos": [
+          1,
+          1
+        ],
+        "pieceId": "c_hawk"
+      },
+      {
+        "pos": [
+          1,
+          2
+        ],
+        "pieceId": "c_viper"
+      },
+      {
+        "pos": [
+          1,
+          3
+        ],
+        "pieceId": "c_viper"
+      },
+      {
+        "pos": [
+          2,
+          1
+        ],
+        "pieceId": "c_general"
+      },
+      {
+        "pos": [
+          2,
+          2
+        ],
+        "pieceId": "i_blade"
+      },
+      {
+        "pos": [
+          2,
+          3
+        ],
+        "pieceId": "c_viper"
+      },
+      {
+        "pos": [
+          3,
+          1
+        ],
+        "pieceId": "c_hawk"
+      },
+      {
+        "pos": [
+          3,
+          2
+        ],
+        "pieceId": "c_viper"
+      },
+      {
+        "pos": [
+          3,
+          3
+        ],
+        "pieceId": "c_viper"
+      }
+    ],
+    "relics": [
+      "r_hourglass",
+      "r_totem",
+      "r_whetstone"
+    ]
+  }
+}

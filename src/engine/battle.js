@@ -23,25 +23,37 @@ function initSide(team, catalog) {
     poisons: [], // 毒の付与の記録 { stacks, until }（until は消えるステップ。永続なら Infinity）
     dealt: 0, // 相手に与えたダメージの合計（毒を含む）
     poisonDealt: 0, // そのうち毒によるダメージ（バランス調整で見る）
+    curseSteps: 0, // このチームにかかっている呪いの残りステップ数
     units: resolved.units.map((unit) => ({ unit, progress: 0, paraSteps: 0 })),
     healers: resolved.healers.map((h) => ({ amount: h.amount, every: stepsOf(h.interval), counter: 0 })),
+    pulses: resolved.pulses.map((p) => ({ ...p, every: stepsOf(p.interval), counter: 0 })),
   };
 }
 
-function pickParalyzeTarget(effect, victim, front, rng) {
+// 麻痺させる相手キャラの一覧
+function pickParalyzeTargets(effect, victim, front, rng) {
   switch (effect.target) {
-    case 'front':
-      return front;
     case 'random':
-      return victim.units[Math.floor(rng() * victim.units.length)];
+      return [victim.units[Math.floor(rng() * victim.units.length)]];
     case 'fastest':
     case 'strongest': {
       const key = effect.target === 'fastest' ? 'spd' : 'atk';
-      return victim.units.reduce((best, s) => (s.unit[key] > best.unit[key] ? s : best));
+      return [victim.units.reduce((best, s) => (s.unit[key] > best.unit[key] ? s : best))];
     }
+    case 'row':
+      return victim.units.filter((s) => s.unit.row === front.unit.row);
+    case 'all':
+      return victim.units;
     default:
-      return front;
+      return [front];
   }
+}
+
+// 1発のダメージ（spec §2）。def は受ける側の計算行の防御。貫通した割合ぶん、防御を無いものとして扱う。
+function hitDamage(power, def, pierce) {
+  const d = def * (1 - pierce);
+  if (BALANCE.armor == null) return (power * 100) / (100 + d); // Ver.1 の式
+  return Math.max(power * BALANCE.minDamage, power - d * BALANCE.armor);
 }
 
 // 戦闘を1ステップずつ進められる形で作る。画面での再生とシミュレーションの両方で使う。
@@ -82,11 +94,39 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
     finish(Math.abs(diff) < EPS ? 'draw' : diff > 0 ? 'a' : 'b', reason);
   }
 
+  // 状態異常を付ける（攻撃時の効果と、定期付与の両方から使う）
+  function inflict(key, effect, front) {
+    const own = sides[key];
+    const foe = sides[other(key)];
+    if (effect.type === 'poison') {
+      const stacks = effect.stacks + own.resolved.poisonBonus;
+      const lasts = BALANCE.poisonDuration === null ? Infinity : stepsOf(BALANCE.poisonDuration);
+      foe.poisons.push({ stacks, until: state.step + lasts });
+      foe.poison += stacks;
+      emit({ type: 'poison', side: key, stacks, total: foe.poison });
+    } else if (effect.type === 'curse') {
+      // 呪いは重ならない。かけ直すと残り時間が長い方になる
+      foe.curseSteps = Math.max(foe.curseSteps, stepsOf(effect.duration));
+      emit({ type: 'curse', side: key, seconds: effect.duration });
+    } else {
+      const seconds = effect.duration + own.resolved.paralyzeBonus;
+      const victims = pickParalyzeTargets(effect, foe, front, rng);
+      for (const victim of victims) victim.paraSteps += stepsOf(seconds);
+      emit({ type: 'paralyze', side: key, targets: victims.map((v) => v.unit.pos), target: victims[0]?.unit.pos, seconds });
+    }
+  }
+
   function advance() {
     if (state.done) return;
     state.step += 1;
     const damage = { a: 0, b: 0 };
     const heal = { a: 0, b: 0 };
+    // 呪いの判定はステップ開始時点のもの（このステップで付いた呪いは次のステップから効く）
+    const cursed = {};
+    for (const key of SIDES) {
+      cursed[key] = sides[key].curseSteps > 0;
+      if (cursed[key]) sides[key].curseSteps -= 1;
+    }
 
     // 1. 攻撃する駒を決める（麻痺の判定はステップ開始時点のもの）
     const attackers = [];
@@ -113,7 +153,7 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
       for (const [calc, share] of foldOf(boards[key], boards[foeKey], s.unit.row)) {
         const row = foe.rows[calc - 1];
         const target = foe.units[row.target.index];
-        const dmg = (share * s.unit.atk * s.unit.atkMult * 100 * BALANCE.damageScale) / (100 + row.def);
+        const dmg = share * hitDamage(s.unit.atk * s.unit.atkMult * BALANCE.damageScale, row.def, s.unit.pierce ?? 0);
         damage[foeKey] += dmg;
         own.dealt += dmg;
         emit({ type: 'attack', side: key, from: s.unit.pos, to: target.unit.pos, dmg });
@@ -125,17 +165,19 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
 
       for (const effect of s.unit.onHit) {
         if (effect.chance < 1 && rng() >= effect.chance) continue;
-        if (effect.type === 'poison') {
-          const stacks = effect.stacks + own.resolved.poisonBonus;
-          const lasts = BALANCE.poisonDuration === null ? Infinity : stepsOf(BALANCE.poisonDuration);
-          foe.poisons.push({ stacks, until: state.step + lasts });
-          foe.poison += stacks;
-          emit({ type: 'poison', side: key, stacks, total: foe.poison });
-        } else {
-          const victim = pickParalyzeTarget(effect, foe, front, rng);
-          victim.paraSteps += stepsOf(effect.duration);
-          emit({ type: 'paralyze', side: key, target: victim.unit.pos, seconds: effect.duration });
-        }
+        inflict(key, effect, front);
+      }
+    }
+
+    // 2b. 定期付与（駒の置き場所に関係なく、一定時間ごとに相手へ）
+    for (const key of SIDES) {
+      const foe = sides[other(key)];
+      for (const p of sides[key].pulses) {
+        p.counter += 1;
+        if (p.counter < p.every) continue;
+        p.counter = 0;
+        const front = foe.units[foe.rows[0].target.index];
+        inflict(key, p.status === 'curse' ? { type: 'curse', duration: p.amount } : { type: 'poison', stacks: p.amount }, front);
       }
     }
 
@@ -148,7 +190,7 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
           victim.poison = victim.poisons.reduce((sum, p) => sum + p.stacks, 0);
         }
         if (victim.poison <= 0) continue;
-        const dmg = victim.poison * BALANCE.poisonDamage;
+        const dmg = victim.poison * BALANCE.poisonDamage * (1 - victim.resolved.poisonResist);
         damage[key] += dmg;
         sides[other(key)].dealt += dmg;
         sides[other(key)].poisonDealt += dmg;
@@ -171,6 +213,11 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
     // 5. 両チームのダメージ・回復を同時に反映
     for (const key of SIDES) {
       const s = sides[key];
+      if (cursed[key]) {
+        const extra = damage[key] * (BALANCE.curseAmp ?? 0);
+        damage[key] += extra;
+        sides[other(key)].dealt += extra;
+      }
       s.hp = Math.min(s.maxHp, s.hp - damage[key] + heal[key]);
     }
     if (log) history.push({ t: timeOf(state.step), a: sides.a.hp, b: sides.b.hp });

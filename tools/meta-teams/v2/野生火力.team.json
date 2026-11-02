@@ -1,0 +1,65 @@
+{
+  "format": "auto-battler/team",
+  "version": 1,
+  "env": "v2",
+  "team": {
+    "name": "野生火力",
+    "board": "honeycomb",
+    "relics": [
+      "r_totem",
+      "r_whetstone",
+      "r_hourglass"
+    ],
+    "slots": [
+      {
+        "pos": [
+          1,
+          2
+        ],
+        "pieceId": "c_lion"
+      },
+      {
+        "pos": [
+          1,
+          4
+        ],
+        "pieceId": "c_lion"
+      },
+      {
+        "pos": [
+          2,
+          1
+        ],
+        "pieceId": "c_behemoth"
+      },
+      {
+        "pos": [
+          2,
+          3
+        ],
+        "pieceId": "i_blade"
+      },
+      {
+        "pos": [
+          2,
+          5
+        ],
+        "pieceId": "c_leopard"
+      },
+      {
+        "pos": [
+          3,
+          2
+        ],
+        "pieceId": "c_leopard"
+      },
+      {
+        "pos": [
+          3,
+          4
+        ],
+        "pieceId": "c_lion"
+      }
+    ]
+  }
+}

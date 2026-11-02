@@ -1,0 +1,79 @@
+{
+  "format": "auto-battler/team",
+  "version": 1,
+  "env": "v2",
+  "team": {
+    "name": "機械工廠",
+    "board": "square",
+    "relics": [
+      "r_gearheart",
+      "r_thunder",
+      "r_spring"
+    ],
+    "slots": [
+      {
+        "pos": [
+          1,
+          1
+        ],
+        "pieceId": "c_golem"
+      },
+      {
+        "pos": [
+          2,
+          1
+        ],
+        "pieceId": "c_tesla"
+      },
+      {
+        "pos": [
+          3,
+          1
+        ],
+        "pieceId": "c_golem"
+      },
+      {
+        "pos": [
+          1,
+          2
+        ],
+        "pieceId": "c_medibot"
+      },
+      {
+        "pos": [
+          2,
+          2
+        ],
+        "pieceId": "i_gear"
+      },
+      {
+        "pos": [
+          3,
+          2
+        ],
+        "pieceId": "c_drone"
+      },
+      {
+        "pos": [
+          1,
+          3
+        ],
+        "pieceId": "c_turret"
+      },
+      {
+        "pos": [
+          2,
+          3
+        ],
+        "pieceId": "c_fighter"
+      },
+      {
+        "pos": [
+          3,
+          3
+        ],
+        "pieceId": "c_drone"
+      }
+    ]
+  }
+}

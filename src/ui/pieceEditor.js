@@ -1,4 +1,4 @@
-import { PARALYZE_TARGETS, STAT_NAMES } from '../data/effects.js';
+import { BUFF_MODES, BUFF_TYPES, EFFECT_TYPES, PARALYZE_TARGETS, PULSE_STATUS, STAT_NAMES } from '../data/effects.js';
 import { TRIBES } from '../data/tribes.js';
 import { CHARACTERS, ITEMS } from '../data/pieces.js';
 import { costBreakdown, pieceCost } from '../core/cost.js';
@@ -27,12 +27,20 @@ const NEW_PIECE = {
   item: { kind: 'item', name: '新しい道具', icon: '⚙️', atk: 10, def: 10, effects: [] },
 };
 
-const ROW_BUFF_MODES = { add: '固定値', pct: '割合(%)' };
+// 能力値を上げる効果（隣接・行・全体）の入力欄。値の単位は、割合なら%、固定値ならそのまま
+const buffFields = (target) => [
+  { k: 'stat', label: '対象の値', options: STAT_NAMES },
+  { k: 'mode', label: '種類', options: BUFF_MODES },
+  { k: 'value', label: `${target}に加算`, min: 1, max: (e) => (e.mode === 'pct' ? 100 : e.stat === 'hp' ? 500 : 100), step: 1, scale: (e) => (e.mode === 'pct' ? 100 : 1) },
+];
+const buff = (type, stat, mode, value) => () => ({ type, stat, mode, value });
 
 // 効果ごとの初期値と、入力欄。scale: 画面では%で入力する値。min/max/scale は効果によって変わるなら関数にする。
+// hint: 効く範囲（隣接が必要かどうか）。legacy: 過去の環境の効果。新しく選ぶことはできない。
 const EFFECTS = {
   poison: {
     name: '毒',
+    hint: '攻撃時（道具なら隣のキャラの攻撃に付く）',
     make: () => ({ type: 'poison', stacks: 1, chance: 1 }),
     fields: [
       { k: 'stacks', label: '付与量', min: 1, max: 10, step: 1 },
@@ -41,34 +49,57 @@ const EFFECTS = {
   },
   paralyze: {
     name: '麻痺',
-    make: () => ({ type: 'paralyze', target: 'front', duration: 3, chance: 0.5 }),
+    hint: '攻撃時（道具なら隣のキャラの攻撃に付く）',
+    make: () => ({ type: 'paralyze', target: 'front', duration: 2, chance: 0.3 }),
     fields: [
       { k: 'target', label: '対象', options: PARALYZE_TARGETS },
       { k: 'duration', label: '秒数', min: 0.1, max: 30, step: 0.1 },
       { k: 'chance', label: '確率(%)', min: 0, max: 100, step: 1, scale: 100 },
     ],
   },
-  adjAtkMult: {
-    name: '隣接攻撃倍率',
-    make: () => ({ type: 'adjAtkMult', mult: 0.2 }),
-    fields: [{ k: 'mult', label: '隣接キャラの攻撃+%', min: 0, max: 500, step: 5, scale: 100 }],
-  },
-  rowBuff: {
-    name: '行効果',
-    make: () => ({ type: 'rowBuff', stat: 'atk', mode: 'add', value: 10 }),
+  curse: {
+    name: '呪い',
+    hint: '攻撃時（道具なら隣のキャラの攻撃に付く）',
+    make: () => ({ type: 'curse', duration: 3, chance: 0.5 }),
     fields: [
-      { k: 'stat', label: '対象の値', options: STAT_NAMES },
-      { k: 'mode', label: '種類', options: ROW_BUFF_MODES },
-      { k: 'value', label: '同じ行のキャラに加算', min: 1, max: (e) => (e.mode === 'pct' ? 100 : e.stat === 'hp' ? 500 : 100), step: 1, scale: (e) => (e.mode === 'pct' ? 100 : 1) },
+      { k: 'duration', label: '秒数', min: 0.5, max: 10, step: 0.5 },
+      { k: 'chance', label: '確率(%)', min: 0, max: 100, step: 1, scale: 100 },
     ],
   },
+  pierce: {
+    name: '防御貫通',
+    hint: '自分の攻撃（道具なら隣のキャラの攻撃）',
+    make: () => ({ type: 'pierce', value: 0.3 }),
+    fields: [{ k: 'value', label: '貫通(%)', min: 5, max: 100, step: 5, scale: 100 }],
+  },
+  adjBuff: { name: '隣接効果', hint: '隣のマスのキャラ', make: buff('adjBuff', 'atk', 'add', 10), fields: buffFields('隣のキャラ') },
+  rowBuff: { name: '行効果', hint: '同じ行のキャラ（キャラなら自分も）', make: buff('rowBuff', 'atk', 'add', 10), fields: buffFields('同じ行のキャラ') },
+  teamBuff: { name: '全体効果', hint: 'どこに置いても、味方のキャラ全員', make: buff('teamBuff', 'def', 'add', 5), fields: buffFields('味方全員') },
   heal: {
     name: '回復',
+    hint: 'どこに置いても（チームHP）',
     make: () => ({ type: 'heal', amount: 10, interval: 1 }),
     fields: [
       { k: 'amount', label: '回復量', min: 1, max: 1000, step: 1 },
       { k: 'interval', label: '間隔(秒)', min: 0.1, max: 30, step: 0.1 },
     ],
+  },
+  pulse: {
+    name: '定期付与',
+    hint: 'どこに置いても、一定時間ごとに相手へ',
+    make: () => ({ type: 'pulse', status: 'poison', amount: 1, interval: 2 }),
+    fields: [
+      { k: 'status', label: '状態異常', options: PULSE_STATUS },
+      { k: 'amount', label: (e) => (e.status === 'curse' ? '秒数' : '付与量'), min: (e) => (e.status === 'curse' ? 0.5 : 1), max: 10, step: (e) => (e.status === 'curse' ? 0.5 : 1) },
+      { k: 'interval', label: '間隔(秒)', min: 0.5, max: 30, step: 0.5 },
+    ],
+  },
+  adjAtkMult: {
+    name: '隣接攻撃倍率（Ver.1）',
+    legacy: true,
+    hint: '隣のマスのキャラ',
+    make: () => ({ type: 'adjAtkMult', mult: 0.2 }),
+    fields: [{ k: 'mult', label: '隣接キャラの攻撃+%', min: 0, max: 500, step: 5, scale: 100 }],
   },
 };
 
@@ -120,20 +151,24 @@ export function initPieceEditor({ store }) {
 
   const effectRow = (e, i) => {
     const def = EFFECTS[e.type];
-    const typeSelect = `<select data-e="${i}" data-k="type">${Object.entries(EFFECTS)
+    // この駒の種類に付けられる効果だけを選べる（過去の環境の効果は、すでに付いているときだけ出す）
+    const choices = Object.entries(EFFECTS)
+      .filter(([id, d]) => id === e.type || (!d.legacy && EFFECT_TYPES[id].on.includes(form.kind)));
+    const typeSelect = `<select data-e="${i}" data-k="type">${choices
       .map(([id, d]) => `<option value="${id}"${id === e.type ? ' selected' : ''}>${d.name}</option>`).join('')}</select>`;
+    const of = (x) => (typeof x === 'function' ? x(e) : x);
     const fields = def.fields.map((f) => {
       if (f.options) {
-        return `<label>${f.label} <select data-e="${i}" data-k="${f.k}">${Object.entries(f.options)
+        return `<label>${of(f.label)} <select data-e="${i}" data-k="${f.k}">${Object.entries(f.options)
           .map(([id, name]) => `<option value="${id}"${id === e[f.k] ? ' selected' : ''}>${escapeHtml(name)}</option>`).join('')}</select></label>`;
       }
-      const of = (x) => (typeof x === 'function' ? x(e) : x);
       const scale = of(f.scale);
       const shown = scale ? Math.round(e[f.k] * scale) : e[f.k];
-      return `<label>${f.label} <input type="number" data-e="${i}" data-k="${f.k}"${scale ? ` data-scale="${scale}"` : ''}`
-        + ` min="${of(f.min)}" max="${of(f.max)}" step="${f.step}" value="${shown}"></label>`;
+      return `<label>${of(f.label)} <input type="number" data-e="${i}" data-k="${f.k}"${scale ? ` data-scale="${scale}"` : ''}`
+        + ` min="${of(f.min)}" max="${of(f.max)}" step="${of(f.step)}" value="${shown}"></label>`;
     }).join('');
-    return `<div class="effect-row">${typeSelect}${fields}<button type="button" data-remove-effect="${i}" title="この効果を外す">✕</button></div>`;
+    return `<div class="effect-row">${typeSelect}${fields}<button type="button" data-remove-effect="${i}" title="この効果を外す">✕</button>`
+      + `<span class="muted effect-hint">効く範囲：${escapeHtml(def.hint)}</span></div>`;
   };
 
   function renderForm() {
@@ -238,15 +273,19 @@ export function initPieceEditor({ store }) {
     if (form && el.dataset.e !== undefined && el.dataset.k === 'type') {
       form.effects[Number(el.dataset.e)] = EFFECTS[el.value].make();
       renderForm(); // 効果の種類を変えると入力欄が変わる
-    } else if (form && el.dataset.e !== undefined && ['mode', 'stat'].includes(el.dataset.k)) {
-      // 行効果の種類・対象を変えたら、値の単位が変わるので入れ直す（攻撃速度は割合のみ）
+    } else if (form && el.dataset.e !== undefined && ['mode', 'stat', 'status'].includes(el.dataset.k)) {
+      // 能力値を上げる効果の種類・対象を変えたら、値の単位が変わるので入れ直す（攻撃速度は割合のみ）
       const effect = form.effects[Number(el.dataset.e)];
-      if (effect?.type === 'rowBuff') {
+      if (BUFF_TYPES.has(effect?.type)) {
         if (effect.stat === 'spd') effect.mode = 'pct';
         effect.value = effect.mode === 'pct' ? 0.1 : effect.stat === 'hp' ? 50 : 10;
-        renderForm();
-        renderDerived();
+      } else if (effect?.type === 'pulse') {
+        effect.amount = effect.status === 'curse' ? 3 : 1; // 毒なら付与量、呪いなら秒数
+      } else {
+        return;
       }
+      renderForm();
+      renderDerived();
     }
   });
 
