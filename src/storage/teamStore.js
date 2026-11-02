@@ -1,31 +1,15 @@
 import { BOARDS } from '../data/boards.js';
 import { PRESET_TEAMS } from '../data/presetTeams.js';
+import { defaultStorage, memoryStorage } from './local.js';
 import { normalizeTeam, sanitizeTeam } from './teamJson.js';
 
 export const SLOT_COUNT = 9;
 const KEY = 'auto-battler.teams.v1';
 
-// localStorage が使えない環境（プライベートウィンドウなど）では、このページを開いている間だけ覚える。
-export function memoryStorage() {
-  const data = new Map();
-  return {
-    getItem: (k) => data.get(k) ?? null,
-    setItem: (k, v) => void data.set(k, String(v)),
-  };
-}
-
-function defaultStorage() {
-  try {
-    const storage = globalThis.localStorage;
-    storage.getItem(KEY);
-    return storage;
-  } catch {
-    return memoryStorage();
-  }
-}
+export { memoryStorage };
 
 // 保存スロットが SLOT_COUNT 個あるチーム保存庫。壊れたデータは空きスロットとして扱う。
-export function createTeamStore(storage = defaultStorage()) {
+export function createTeamStore(storage = defaultStorage(KEY)) {
   const read = () => {
     let raw = [];
     try {

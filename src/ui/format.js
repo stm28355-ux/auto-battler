@@ -16,5 +16,5 @@ export function pieceSummary(piece) {
     ? `HP ${piece.hp} / 攻撃 ${piece.atk} / 防御 ${piece.def} / 攻撃速度 ${piece.spd}`
     : `攻撃 +${piece.atk} / 防御 +${piece.def}（隣接キャラへ）`;
   const tribe = piece.kind === 'character' ? ` ${tribeTag(piece.tribe)}` : '';
-  return `<strong>${piece.icon} ${escapeHtml(piece.name)}</strong>${tribe} コスト${pieceCost(piece)}<br>${stats}<br>${effectsText(piece.effects)}`;
+  return `<strong>${escapeHtml(piece.icon)} ${escapeHtml(piece.name)}</strong>${tribe} コスト${pieceCost(piece)}<br>${stats}<br>${effectsText(piece.effects)}`;
 }

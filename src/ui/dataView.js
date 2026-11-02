@@ -27,12 +27,12 @@ export function initDataView() {
     $('character-table').innerHTML = `
       <tr><th></th><th>名前</th><th>種族</th><th>コスト</th><th>HP</th><th>攻撃</th><th>防御</th><th>攻撃速度</th><th>特殊効果</th></tr>
       ${pieces.filter((p) => p.kind === 'character').map((p) => `
-        <tr><td>${p.icon}</td><td>${escapeHtml(p.name)}</td><td>${tribeTag(p.tribe)}</td><td>${pieceCost(p)}</td>
+        <tr><td>${escapeHtml(p.icon)}</td><td>${escapeHtml(p.name)}</td><td>${tribeTag(p.tribe)}</td><td>${pieceCost(p)}</td>
         <td>${p.hp}</td><td>${p.atk}</td><td>${p.def}</td><td>${p.spd}</td><td>${effectsText(p.effects)}</td></tr>`).join('')}`;
     $('item-table').innerHTML = `
       <tr><th></th><th>名前</th><th>コスト</th><th>攻撃</th><th>防御</th><th>特殊効果</th></tr>
       ${pieces.filter((p) => p.kind === 'item').map((p) => `
-        <tr><td>${p.icon}</td><td>${escapeHtml(p.name)}</td><td>${pieceCost(p)}</td>
+        <tr><td>${escapeHtml(p.icon)}</td><td>${escapeHtml(p.name)}</td><td>${pieceCost(p)}</td>
         <td>${p.atk}</td><td>${p.def}</td><td>${effectsText(p.effects)}</td></tr>`).join('')}`;
     $('relic-table').innerHTML = `
       <tr><th></th><th>名前</th><th>特殊効果</th></tr>

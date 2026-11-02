@@ -1,15 +1,24 @@
+import { createPieceStore } from './storage/pieceStore.js';
 import { createTeamStore, listBattleTeams } from './storage/teamStore.js';
 import { initBattleScreen } from './ui/battleScreen.js';
 import { initDataView } from './ui/dataView.js';
+import { initPieceEditor } from './ui/pieceEditor.js';
 import { initTeamEditor } from './ui/teamEditor.js';
 
 const store = createTeamStore();
+const pieceStore = createPieceStore();
 
 const battle = initBattleScreen({ getTeams: () => listBattleTeams(store) });
-initTeamEditor({ store });
+const teamEditor = initTeamEditor({ store, pieceStore });
+const pieceEditor = initPieceEditor({ store: pieceStore });
 initDataView();
 
 const tabs = [...document.querySelectorAll('.tab')];
+const onShow = {
+  battle: () => battle.refreshTeams(), // 編成で保存したチームを反映
+  team: () => teamEditor.refresh(), // 駒作成で作った駒を反映
+  piece: () => pieceEditor.refresh(),
+};
 
 function showView(name) {
   const view = tabs.some((t) => t.dataset.view === name) ? name : 'battle';
@@ -18,7 +27,7 @@ function showView(name) {
     tab.setAttribute('aria-selected', String(active));
     document.getElementById(`view-${tab.dataset.view}`).hidden = !active;
   }
-  if (view === 'battle') battle.refreshTeams(); // 編成で保存したチームを反映
+  onShow[view]?.();
 }
 
 for (const tab of tabs) {

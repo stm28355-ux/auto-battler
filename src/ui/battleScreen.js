@@ -129,7 +129,7 @@ export function initBattleScreen({ getTeams }) {
     if (!state) return piece ? pieceSummary(piece) : '空きマス';
     const u = state.unit;
     const n = (x) => Math.round(x * 10) / 10;
-    return `<strong>${u.piece.icon} ${escapeHtml(u.piece.name)}</strong> ${tribeTag(u.tribe)}${state.paraSteps > 0 ? ' ❄麻痺中' : ''}<br>`
+    return `<strong>${escapeHtml(u.piece.icon)} ${escapeHtml(u.piece.name)}</strong> ${tribeTag(u.tribe)}${state.paraSteps > 0 ? ' ❄麻痺中' : ''}<br>`
       + `HP ${n(u.hp)} ／ 攻撃 ${n(u.atk)}×${n(u.atkMult)} ／ 防御 ${n(u.def)} ／ 攻撃速度 ${n(u.spd)}`
       + (u.onHit.length ? `<br>${u.onHit.map((e) => escapeHtml(describeEffect(e))).join('<br>')}` : '');
   }

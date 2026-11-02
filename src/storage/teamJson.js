@@ -1,37 +1,15 @@
 import { BOARDS, isCell, posKey } from '../data/boards.js';
-import { CHARACTERS, ITEMS } from '../data/pieces.js';
-import { validatePiece } from '../core/piece.js';
+import { BUILTIN_IDS, MAX_JSON_CHARS, MAX_NAME, PIECE_FORMAT, PIECES_FORMAT, isId, sanitizePiece } from './pieceJson.js';
 
+export { BUILTIN_IDS, MAX_JSON_CHARS, MAX_NAME };
 export const TEAM_FORMAT = 'auto-battler/team';
 export const TEAM_VERSION = 1;
-export const MAX_NAME = 30;
-export const MAX_JSON_CHARS = 1_000_000;
+const MAX_SLOTS = 64;
+const MAX_RELICS_READ = 10;
 const MAX_CUSTOM_PIECES = 100;
-const MAX_ID = 64;
-const PIECE_KEYS = ['id', 'kind', 'name', 'icon', 'tribe', 'hp', 'atk', 'def', 'spd', 'effects'];
-
-// 標準の駒のID。自作駒はこれと重ならないIDにする。
-export const BUILTIN_IDS = new Set([...CHARACTERS, ...ITEMS].map((p) => p.id));
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
-const isStr = (v, max) => typeof v === 'string' && v.length > 0 && v.length <= max;
-
-function sanitizeCustomPiece(raw, index, errors) {
-  const label = `customPieces[${index}]`;
-  if (!isObj(raw)) {
-    errors.push(`${label} が不正です`);
-    return null;
-  }
-  const piece = Object.fromEntries(PIECE_KEYS.filter((k) => k in raw).map((k) => [k, structuredClone(raw[k])]));
-  if (!isStr(piece.id, MAX_ID)) errors.push(`${label}: IDが不正です`);
-  if (!isStr(piece.name, MAX_NAME)) errors.push(`${label}: 名前は1〜${MAX_NAME}文字にしてください`);
-  if (piece.icon === undefined) piece.icon = '❓';
-  else if (!isStr(piece.icon, 8)) errors.push(`${label}: アイコンが不正です`);
-  piece.effects ??= [];
-  const problems = validatePiece(piece);
-  errors.push(...problems.map((p) => `自作駒「${String(piece.name)}」: ${p}`));
-  return piece;
-}
+const BAD_CHARS = /[\u0000-\u001f\u007f-\u009f‎‏‪-‮⁦-⁩]/;
 
 // 入力（JSONから読んだ値やlocalStorageの値）を検査し、既知の項目だけを持つチームを返す。
 // 構造が壊れているときだけエラーにする。コスト超過などの「ルール違反」は validateTeam が扱う。
@@ -40,20 +18,20 @@ export function sanitizeTeam(raw) {
   const errors = [];
 
   const name = typeof raw.name === 'string' ? raw.name.trim() : '';
-  if (!name || name.length > MAX_NAME) errors.push(`チーム名は1〜${MAX_NAME}文字にしてください`);
+  if (!name || name.length > MAX_NAME || BAD_CHARS.test(name)) errors.push(`チーム名は1〜${MAX_NAME}文字にしてください`);
 
-  const board = Object.hasOwn(BOARDS, raw.board) ? BOARDS[raw.board] : null;
+  const board = typeof raw.board === 'string' && Object.hasOwn(BOARDS, raw.board) ? BOARDS[raw.board] : null;
   if (!board) errors.push(`ボードが不正です（${String(raw.board)}）`);
 
   const slots = [];
-  if (!Array.isArray(raw.slots) || raw.slots.length > 64) {
+  if (!Array.isArray(raw.slots) || raw.slots.length > MAX_SLOTS) {
     errors.push('slots が不正です');
   } else {
     const seen = new Set();
     raw.slots.forEach((s, i) => {
       const pos = s?.pos;
       const okPos = Array.isArray(pos) && pos.length === 2 && pos.every(Number.isInteger);
-      if (!isObj(s) || !okPos || !isStr(s.pieceId, MAX_ID)) {
+      if (!isObj(s) || !okPos || !isId(s.pieceId)) {
         errors.push(`slots[${i}] が不正です`);
       } else if (board && !isCell(board.id, pos)) {
         errors.push(`(${pos}) は${board.name}のマスではありません`);
@@ -67,11 +45,12 @@ export function sanitizeTeam(raw) {
   }
 
   const relics = [];
-  if (!Array.isArray(raw.relics ?? []) || (raw.relics ?? []).length > 10) {
+  const rawRelics = raw.relics ?? [];
+  if (!Array.isArray(rawRelics) || rawRelics.length > MAX_RELICS_READ) {
     errors.push('relics が不正です');
   } else {
-    for (const id of raw.relics ?? []) {
-      if (isStr(id, MAX_ID)) relics.push(id);
+    for (const id of rawRelics) {
+      if (isId(id)) relics.push(id);
       else errors.push('relics に不正なIDがあります');
     }
   }
@@ -83,10 +62,10 @@ export function sanitizeTeam(raw) {
     } else {
       const ids = new Set();
       raw.customPieces.forEach((p, i) => {
-        const piece = sanitizeCustomPiece(p, i, errors);
+        const { piece, errors: errs } = sanitizePiece(p, `自作駒[${i + 1}]`);
+        errors.push(...errs);
         if (!piece) return;
-        if (BUILTIN_IDS.has(piece.id)) errors.push(`自作駒のID（${piece.id}）が標準の駒と重複しています`);
-        else if (ids.has(piece.id)) errors.push(`自作駒のID（${piece.id}）が重複しています`);
+        if (ids.has(piece.id)) errors.push(`自作駒のID（${piece.id}）が重複しています`);
         ids.add(piece.id);
         customPieces.push(piece);
       });
@@ -126,6 +105,9 @@ export function parseTeamJson(text) {
     data = JSON.parse(text);
   } catch (e) {
     return { team: null, errors: [`JSONとして読み込めません（${e.message}）`] };
+  }
+  if (isObj(data) && (data.format === PIECE_FORMAT || data.format === PIECES_FORMAT)) {
+    return { team: null, errors: ['チームのJSONではありません（駒のJSONです。「駒作成」タブで読み込んでください）'] };
   }
   if (!isObj(data) || data.format !== TEAM_FORMAT) return { team: null, errors: ['チームのJSONではありません'] };
   if (data.version !== TEAM_VERSION) return { team: null, errors: [`未対応のバージョンです（${String(data.version)}）`] };

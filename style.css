@@ -364,8 +364,50 @@ textarea {
 .relic-btn { display: grid; gap: 2px; text-align: left; padding: 6px 8px; font-size: 0.8rem; }
 .relic-btn.selected { border-color: var(--front); background: #3b3a2a; }
 
+.piece-btn--custom { border-style: dashed; }
+.palette-note { padding: 6px 8px; border-radius: 4px; background: #3b3a2a; font-size: 0.85rem; }
+
+/* ---- 駒作成 ---- */
+.piece-list { display: grid; gap: 4px; margin-top: 8px; }
+.form-panel h3 { margin-top: 0; }
+.form-panel h4 { margin: 16px 0 6px; }
+.form-row { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.form-row label, .effect-row label { display: flex; align-items: center; gap: 6px; }
+.form-panel input[type="text"], .form-panel input[type="number"], .effect-row select, .form-row select {
+  padding: 4px 6px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--cell-line);
+  border-radius: 4px;
+  font: inherit;
+}
+.icon-input { width: 5em; }
+.icon-pick { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 8px; }
+.icon-pick button { padding: 2px 6px; font-size: 1.1rem; background: transparent; border-color: transparent; }
+.icon-pick button:hover { border-color: var(--cell-line); }
+
+.stat-row { display: grid; grid-template-columns: 11em minmax(80px, 1fr) 6em 6em; gap: 8px; align-items: center; margin: 4px 0; }
+.stat-label { font-size: 0.9rem; }
+.stat-row input[type="number"] { width: 100%; }
+.range-note { font-size: 0.8rem; }
+
+.effect-row { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 6px 0; border-top: 1px solid var(--cell-line); }
+.effect-row input[type="number"] { width: 6em; }
+.effect-row button { margin-left: auto; padding: 2px 8px; }
+
+.piece-result { margin-top: 12px; grid-template-columns: 240px minmax(0, 1fr); }
+.cost-total { margin: 0 0 4px; font-size: 2rem; font-weight: bold; }
+.breakdown { font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.breakdown td:last-child { text-align: right; }
+#piece-errors { margin: 8px 0; }
+#piece-errors:empty { display: none; }
+#piece-form .buttons { margin-top: 12px; }
+
 @media (max-width: 900px) {
-  .editor-grid, .editor-body { grid-template-columns: 1fr; }
+  .editor-grid, .editor-body, .piece-result { grid-template-columns: 1fr; }
+  .stat-row { grid-template-columns: 1fr 1fr 5em; }
+  .stat-label { grid-column: 1 / -1; }
+  .range-note { display: none; }
 }
 
 @media (max-width: 760px) {

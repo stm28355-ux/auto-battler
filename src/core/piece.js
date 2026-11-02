@@ -20,7 +20,7 @@ function validateEffect(e, kind) {
   if (!type.on.includes(kind)) return `${type.name}はこの駒に付けられません`;
   switch (e.type) {
     case 'poison':
-      if (!Number.isInteger(e.stacks) || e.stacks < 1) return '毒の付与量は1以上の整数にしてください';
+      if (!Number.isInteger(e.stacks) || e.stacks < 1 || e.stacks > 10) return '毒の付与量は1〜10の整数にしてください';
       if (!inRange(e.chance, [0, 1])) return '毒の確率は0〜1にしてください';
       break;
     case 'paralyze':

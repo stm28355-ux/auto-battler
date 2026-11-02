@@ -12,6 +12,7 @@
     <nav class="tabs">
       <button class="tab" type="button" data-view="battle" aria-selected="true">対戦</button>
       <button class="tab" type="button" data-view="team" aria-selected="false">チーム編成</button>
+      <button class="tab" type="button" data-view="piece" aria-selected="false">駒作成</button>
       <button class="tab" type="button" data-view="data" aria-selected="false">データ一覧</button>
     </nav>
   </header>
@@ -126,6 +127,39 @@
           <h3>遺物 <span id="relic-count" class="muted"></span></h3>
           <div id="relic-picker" class="relic-picker"></div>
         </section>
+      </div>
+    </div>
+
+    <div id="view-piece" hidden>
+      <div class="editor-grid">
+        <aside class="editor-side">
+          <section class="panel">
+            <h3>自作の駒</h3>
+            <div class="buttons buttons--wrap">
+              <button id="piece-new-character" type="button" class="primary">＋ キャラクター</button>
+              <button id="piece-new-item" type="button" class="primary">＋ 道具</button>
+            </div>
+            <div id="piece-list" class="piece-list"></div>
+          </section>
+          <section class="panel">
+            <h3>JSON</h3>
+            <div class="buttons buttons--wrap">
+              <button id="piece-json-download" type="button">この駒を書き出す</button>
+              <button id="piece-json-copy" type="button">コピー</button>
+              <button id="piece-json-all" type="button">すべて書き出す</button>
+              <button id="piece-json-open" type="button">ファイルを読み込む</button>
+              <button id="piece-json-paste-toggle" type="button">貼り付けて読み込む</button>
+            </div>
+            <input id="piece-json-file" type="file" accept=".json,application/json" hidden>
+            <div id="piece-json-paste" hidden>
+              <textarea id="piece-json-text" rows="6" spellcheck="false" placeholder="駒のJSONを貼り付け"></textarea>
+              <button id="piece-json-apply" type="button">読み込む</button>
+            </div>
+          </section>
+          <div id="piece-message" class="message"></div>
+        </aside>
+
+        <section id="piece-form" class="editor-main"></section>
       </div>
     </div>
 

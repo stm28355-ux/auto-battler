@@ -3,7 +3,7 @@ import { RELICS } from '../data/relics.js';
 import { createCatalog } from '../core/catalog.js';
 import { pieceCost } from '../core/cost.js';
 import { MAX_RELICS, teamCost } from '../core/team.js';
-import { exportTeamJson, MAX_JSON_CHARS, MAX_NAME, parseTeamJson } from '../storage/teamJson.js';
+import { BUILTIN_IDS, exportTeamJson, MAX_JSON_CHARS, MAX_NAME, parseTeamJson } from '../storage/teamJson.js';
 import { SLOT_COUNT } from '../storage/teamStore.js';
 import { renderBoard } from './boardView.js';
 import { $, effectsText, escapeHtml, pieceSummary } from './format.js';
@@ -16,15 +16,28 @@ const DIRTY_CONFIRM = '未保存の変更があります。破棄しますか？
 const blankTeam = () => ({ name: '新しいチーム', board: 'square', slots: [], relics: [] });
 
 // 「チーム編成」タブ：駒を選んでマスに置き、9つのスロットに保存する。JSONの入出力にも対応。
-export function initTeamEditor({ store }) {
+export function initTeamEditor({ store, pieceStore }) {
   let draft = blankTeam();
   let slot = 0; // 保存先のスロット
   let loadedSlot = null; // 今の編集内容を読み込んだスロット
   let baseline = JSON.stringify(draft); // 保存・読み込み直後の内容（未保存の変更の判定用）
   let tool = null; // 選択中の駒のID、または ERASER
   let saved = store.load();
+  let myPieces = pieceStore.load(); // 「駒作成」で作った駒
 
-  const catalog = () => createCatalog(draft.customPieces ?? []);
+  // 自作駒は、置いた時点の内容をチームにコピーして持たせる（draft.customPieces）。
+  // 駒作成で後から直しても、保存済みのチームは勝手に変わらない。
+  const pool = () => {
+    const byId = new Map(myPieces.map((p) => [p.id, p]));
+    for (const p of draft.customPieces ?? []) byId.set(p.id, p);
+    return [...byId.values()];
+  };
+  const catalog = () => createCatalog(pool());
+  const isCustom = (id) => !BUILTIN_IDS.has(id);
+  const outdated = () => (draft.customPieces ?? []).filter((p) => {
+    const latest = myPieces.find((m) => m.id === p.id);
+    return latest && JSON.stringify(latest) !== JSON.stringify(p);
+  });
   const dirty = () => JSON.stringify(draft) !== baseline;
   const confirmDiscard = () => !dirty() || window.confirm(DIRTY_CONFIRM);
 
@@ -82,7 +95,13 @@ export function initTeamEditor({ store }) {
     if (!tool) return;
     const key = posKey(pos);
     draft.slots = draft.slots.filter((s) => posKey(s.pos) !== key);
-    if (tool !== ERASER) draft.slots.push({ pos, pieceId: tool });
+    if (tool !== ERASER) {
+      draft.slots.push({ pos, pieceId: tool });
+      const mine = myPieces.find((p) => p.id === tool);
+      if (isCustom(tool) && mine && !(draft.customPieces ?? []).some((p) => p.id === tool)) {
+        (draft.customPieces ??= []).push(structuredClone(mine));
+      }
+    }
     render();
   }
 
@@ -105,11 +124,16 @@ export function initTeamEditor({ store }) {
 
   function renderPalette() {
     const cat = catalog();
-    const button = (p) => `<button type="button" class="piece-btn${tool === p.id ? ' selected' : ''}" data-id="${escapeHtml(p.id)}">`
-      + `${p.icon} ${escapeHtml(p.name)} <span class="cost">${pieceCost(p)}</span></button>`;
+    const button = (p) => `<button type="button" class="piece-btn${tool === p.id ? ' selected' : ''}${isCustom(p.id) ? ' piece-btn--custom' : ''}" data-id="${escapeHtml(p.id)}">`
+      + `${escapeHtml(p.icon)} ${escapeHtml(p.name)} <span class="cost">${pieceCost(p)}</span></button>`;
     const row = (label, kind) => `<div class="palette-row"><span class="palette-label">${label}</span>`
       + `${cat.pieces().filter((p) => p.kind === kind).map(button).join('')}</div>`;
-    $('palette').innerHTML = row('キャラクター', 'character') + row('道具', 'item')
+    const stale = outdated();
+    const note = stale.length
+      ? `<div class="palette-note">⚠ 自作駒 ${stale.map((p) => `「${escapeHtml(p.name)}」`).join('')}に、駒作成で更新された新しい版があります。`
+        + ' <button type="button" data-update>最新版に更新</button></div>'
+      : '';
+    $('palette').innerHTML = note + row('キャラクター', 'character') + row('道具', 'item')
       + `<div class="palette-row"><span class="palette-label">その他</span>`
       + `<button type="button" class="piece-btn${tool === ERASER ? ' selected' : ''}" data-id="${ERASER}">🧹 消す</button>`
       + '<span class="muted">マスの右クリックでも消せます</span></div>';
@@ -149,6 +173,12 @@ export function initTeamEditor({ store }) {
   });
 
   $('palette').addEventListener('click', (ev) => {
+    if (ev.target.closest('[data-update]')) {
+      draft.customPieces = draft.customPieces.map((p) => structuredClone(myPieces.find((m) => m.id === p.id) ?? p));
+      render();
+      setMessage('ok', '自作駒を最新版に更新しました（保存するまでスロットには反映されません）');
+      return;
+    }
     const btn = ev.target.closest('[data-id]');
     if (!btn) return;
     tool = tool === btn.dataset.id ? null : btn.dataset.id;
@@ -276,4 +306,12 @@ export function initTeamEditor({ store }) {
 
   render();
   setMessage('info', '');
+
+  return {
+    // 他のタブから戻ったときに、自作駒を読み直す
+    refresh() {
+      myPieces = pieceStore.load();
+      render();
+    },
+  };
 }
