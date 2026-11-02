@@ -18,11 +18,25 @@
   </header>
 
   <main>
-    <div id="view-battle">
+    <div id="view-battle" data-mode="custom">
       <section class="panel match-setup">
-        <label>チームA <select id="team-a"></select></label>
-        <label>チームB <select id="team-b"></select></label>
-        <label>シード <input id="seed" type="number" value="1" min="0" step="1">
+        <div class="mode-switch" role="radiogroup" aria-label="対戦モード">
+          <label><input type="radio" name="mode" value="custom" checked> カスタム対戦</label>
+          <label><input type="radio" name="mode" value="random"> ランダムマッチ</label>
+        </div>
+        <label><span class="only-custom">チームA</span><span class="only-random">自分のチーム</span> <select id="team-a"></select></label>
+        <label><span class="only-custom">チームB</span><span class="only-random">対戦相手</span> <select id="team-b"></select></label>
+        <label class="only-random">強さ
+          <select id="tier">
+            <option value="any">おまかせ</option>
+            <option value="easy">やさしい</option>
+            <option value="normal">ふつう</option>
+            <option value="hard">つよい</option>
+          </select>
+        </label>
+        <button id="opponent-draw" type="button" class="only-random">🎲 相手を抽選</button>
+        <span id="record" class="only-random record"></span>
+        <label class="only-custom">シード <input id="seed" type="number" value="1" min="0" step="1">
           <button id="seed-random" type="button" title="ランダムなシードにする">🎲</button></label>
         <label>速度
           <select id="speed">

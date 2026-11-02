@@ -172,6 +172,10 @@ button {
 button:disabled { opacity: 0.4; cursor: default; }
 button.primary { background: #2f6f4f; border-color: #3f8f67; }
 #seed-random { padding: 2px 8px; margin-left: 4px; }
+.mode-switch { display: flex; gap: 16px; flex-basis: 100%; padding-bottom: 8px; border-bottom: 1px solid var(--cell-line); }
+#view-battle[data-mode="custom"] .only-random,
+#view-battle[data-mode="random"] .only-custom { display: none !important; }
+.record { font-variant-numeric: tabular-nums; color: var(--front); }
 #setup-errors { flex-basis: 100%; margin: 0; }
 #setup-errors:empty { display: none; }
 

@@ -1,5 +1,5 @@
 import { BOARDS } from '../data/boards.js';
-import { PRESET_TEAMS } from '../data/presetTeams.js';
+import { PRESET_TEAMS, TIERS } from '../data/presetTeams.js';
 import { defaultStorage, memoryStorage } from './local.js';
 import { normalizeTeam, sanitizeTeam } from './teamJson.js';
 
@@ -52,7 +52,7 @@ export function createTeamStore(storage = defaultStorage(KEY)) {
 export function listBattleTeams(store) {
   const presets = PRESET_TEAMS.map((team) => ({
     id: `preset:${team.id}`,
-    label: `[プリセット] ${team.name}（${BOARDS[team.board].name}）`,
+    label: `[プリセット・${TIERS[team.tier].name}] ${team.name}（${BOARDS[team.board].name}）`,
     team,
   }));
   const saved = store.load().flatMap((team, i) => (team

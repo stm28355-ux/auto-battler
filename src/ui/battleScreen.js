@@ -1,6 +1,7 @@
 import { BOARDS, posKey } from '../data/boards.js';
 import { describeEffect } from '../data/effects.js';
 import { createCatalog } from '../core/catalog.js';
+import { createRecord, pickOpponent } from '../core/randomMatch.js';
 import { validateTeam } from '../core/team.js';
 import { createBattle, DT, MAX_STEPS } from '../engine/battle.js';
 import { renderBoard } from './boardView.js';
@@ -43,6 +44,9 @@ function floater(svg, cell, text, cls) {
 export function initBattleScreen({ getTeams }) {
   let entries = getTeams();
   let game = null;
+  let mode = 'custom'; // 'custom'（カスタム対戦）か 'random'（ランダムマッチ）
+  let opponent = null; // ランダムマッチで引いた相手
+  const record = createRecord();
 
   const entryOf = (key) => entries.find((e) => e.id === $(`team-${key}`).value);
 
@@ -92,7 +96,7 @@ export function initBattleScreen({ getTeams }) {
     }
 
     const battle = createBattle(picked.a, picked.b, catalog, { seed: seed(), log: true });
-    game = { battle, catalog, teams: picked, views: {}, running: false, paused: false, acc: 0, last: 0, raf: 0, logged: 0 };
+    game = { battle, catalog, teams: picked, views: {}, mode, recorded: false, running: false, paused: false, acc: 0, last: 0, raf: 0, logged: 0 };
     $('result').hidden = true;
     $('log').replaceChildren();
     for (const key of SIDES) game.views[key] = buildSide(key);
@@ -214,14 +218,43 @@ export function initBattleScreen({ getTeams }) {
       ? '引き分け'
       : `勝者: ${escapeHtml(game.teams[r.winner].name)}（${r.winner.toUpperCase()}）`;
     $('result').innerHTML = `<strong>${title}</strong><br>${REASONS[r.reason]} ／ ${r.time}秒 ／ `
-      + `HP割合 A ${pct(r.ratio.a)} : B ${pct(r.ratio.b)} ／ 与ダメージ A ${Math.round(r.dealt.a)} : B ${Math.round(r.dealt.b)}`;
+      + `HP割合 A ${pct(r.ratio.a)} : B ${pct(r.ratio.b)} ／ 与ダメージ A ${Math.round(r.dealt.a)} : B ${Math.round(r.dealt.b)} ／ シード ${r.seed}`;
     $('result').hidden = false;
+  }
+
+  function updateRecord() {
+    $('record').textContent = record.total ? `戦績 ${record.win}勝 ${record.loss}敗 ${record.draw}分` : '';
   }
 
   function finish() {
     stop();
     showResult();
+    if (game.mode === 'random' && !game.recorded) {
+      game.recorded = true;
+      record.add(game.battle.state.result.winner);
+      updateRecord();
+    }
     setButtons();
+  }
+
+  // ---- ランダムマッチ ----
+  // 相手になるのはゲーム側のプリセットだけ（保存したチームは出ない）
+  const randomPool = () => entries.filter((e) => e.id.startsWith('preset:'));
+
+  function drawOpponent() {
+    const next = pickOpponent(randomPool(), $('tier').value, Math.random, opponent?.id);
+    if (!next) return;
+    opponent = next;
+    $('team-b').value = next.id;
+    prepare();
+  }
+
+  function setMode(next) {
+    mode = next;
+    $('view-battle').dataset.mode = next;
+    $('team-b').disabled = next === 'random';
+    if (next === 'random') drawOpponent();
+    else prepare();
   }
 
   function tick(now) {
@@ -249,8 +282,15 @@ export function initBattleScreen({ getTeams }) {
   }
 
   $('start').addEventListener('click', () => {
+    // ランダムマッチは、戦うたびに新しいシード（同じ相手でも毎回違う展開になる）
+    if (mode === 'random') $('seed').value = String(Math.floor(Math.random() * 1e6));
     if (prepare()) play();
   });
+  for (const radio of document.querySelectorAll('input[name="mode"]')) {
+    radio.addEventListener('change', () => radio.checked && setMode(radio.value));
+  }
+  $('opponent-draw').addEventListener('click', drawOpponent);
+  $('tier').addEventListener('change', drawOpponent);
   $('pause').addEventListener('click', () => {
     game.paused = !game.paused;
     setButtons();
