@@ -49,8 +49,8 @@ test('チーム検証', () => {
     ['キャラクターを1体以上配置してください']);
   assert.match(validateTeam(team('square', [{ pos: [4, 1], pieceId: 'c_wolf' }]), catalog)[0], /マスではありません/);
   assert.match(validateTeam(team('honeycomb', [{ pos: [1, 1], pieceId: 'c_wolf' }]), catalog)[0], /マスではありません/);
-  const heavy = team('pentagram', ['2,1', '2,2', '2,3', '2,4'].map((k) => ({ pos: k.split(',').map(Number), pieceId: 'c_golem' })));
-  assert.equal(teamCost(heavy, catalog), 12);
+  const heavy = team('pentagram', ['2,1', '2,2', '2,3', '2,4', '2,5', '3,1', '3,2', '3,3'].map((k) => ({ pos: k.split(',').map(Number), pieceId: 'c_golem' })));
+  assert.equal(teamCost(heavy, catalog), 24);
   assert.match(validateTeam(heavy, catalog).join(), /コストが上限を超えています/);
   const relics = team('square', [{ pos: [1, 1], pieceId: 'c_wolf' }], ['r_heart', 'r_amulet', 'r_totem', 'r_spring']);
   assert.match(validateTeam(relics, catalog).join(), /遺物は3つまで/);
