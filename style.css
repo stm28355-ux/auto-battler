@@ -625,3 +625,6 @@ body[data-view="rules"] .help-btn { border-color: #6d6235; color: var(--accent);
   .rule-dl { grid-template-columns: 1fr; }
   .help-btn { padding: 4px 8px; }
 }
+.rule-range td.need { color: #f2c14e; }
+.rule-range td.row { color: #8fd3ff; }
+.rule-range td.any { color: #7bd88f; }

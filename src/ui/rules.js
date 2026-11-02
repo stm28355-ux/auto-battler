@@ -40,7 +40,7 @@ export function initRules({ go }) {
       <h2>3. 駒</h2>
       <dl class="rule-dl">
         <dt>キャラクター</dt><dd>HP・攻撃・防御・攻撃速度・種族を持ち、自動で攻撃する。<strong>1体以上</strong>置く必要がある。</dd>
-        <dt>道具</dt><dd>自分では攻撃しない。<strong>隣のマスのキャラクター</strong>の攻撃・防御を上げ、毒や麻痺などの効果を与える。</dd>
+        <dt>道具</dt><dd>自分では攻撃しない。<strong>隣のマスのキャラクター</strong>の攻撃・防御を上げ、毒や麻痺などの効果を与える（隣にいないキャラには効かない。回復だけはどこに置いても効く。詳しくは「6. 特殊効果」の「効く範囲」）。</dd>
         <dt>遺物</dt><dd>マスもコストも使わない。チーム全体などに効く。${MAX_RELICS}つまで。</dd>
         <dt>特殊効果</dt><dd>1つの駒に${MAX_EFFECTS}個まで（下の「6. 特殊効果」）。</dd>
       </dl>
@@ -81,6 +81,16 @@ export function initRules({ go }) {
         <dt>↔ 行効果</dt><dd>同じ行にいるキャラクターのステータスを上げる（固定値か割合）。</dd>
         <dt>💚 回復</dt><dd>一定時間ごとにチームHPを回復する（最大HPは超えない）。</dd>
       </dl>
+      <h3>効く範囲（置き場所が大事な効果）</h3>
+      <div class="table-wrap"><table class="rule-range">
+        <tr><th>効果</th><th>キャラクターが持つとき</th><th>道具が持つとき</th></tr>
+        <tr><td>攻撃・防御（道具の数値）</td><td>—</td><td class="need">隣のキャラ全員に加算</td></tr>
+        <tr><td>☠ 毒・❄ 麻痺</td><td>自分の攻撃に付く</td><td class="need">隣のキャラ全員の攻撃に付く</td></tr>
+        <tr><td>🚩 隣接攻撃倍率</td><td class="need">隣のキャラ全員</td><td class="need">隣のキャラ全員</td></tr>
+        <tr><td>↔ 行効果</td><td class="row">同じ行のキャラ全員（自分も）</td><td class="row">同じ行のキャラ全員</td></tr>
+        <tr><td>💚 回復</td><td class="any">どこでもOK（チームHP）</td><td class="any">どこでもOK（チームHP）</td></tr>
+      </table></div>
+      <p class="muted">「隣」は辺を共有するマス。編成画面でマスにマウスを乗せると、隣のマスが色付きで表示される。隣にキャラクターがいない道具は、回復以外は何も効かない。遺物は置き場所に関係なく効く。</p>
     </section>
 
     <section class="rule-card">
