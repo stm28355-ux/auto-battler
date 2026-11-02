@@ -213,11 +213,17 @@ export function initBattleScreen({ getTeams }) {
 
   function showResult() {
     const r = game.battle.state.result;
-    const pct = (x) => `${(x * 100).toFixed(1)}%`;
+    // はみ出した分（負の割合）は、同時KOの判定に使うときだけ見せる
+    const pct = (x) => `${((r.reason === 'simultaneous' ? x : Math.max(0, x)) * 100).toFixed(1)}%`;
     const title = r.winner === 'draw'
       ? '引き分け'
       : `勝者: ${escapeHtml(game.teams[r.winner].name)}（${r.winner.toUpperCase()}）`;
-    $('result').innerHTML = `<strong>${title}</strong><br>${REASONS[r.reason]} ／ ${r.time}秒 ／ `
+    // ランダムマッチは自分（A）から見た結果を大きく出す
+    const verdict = game.mode !== 'random' ? ''
+      : r.winner === 'a' ? '<div class="verdict verdict--win">WIN</div>'
+        : r.winner === 'b' ? '<div class="verdict verdict--lose">LOSE</div>'
+          : '<div class="verdict">DRAW</div>';
+    $('result').innerHTML = `${verdict}<strong>${title}</strong><br>${REASONS[r.reason]} ／ ${r.time}秒 ／ `
       + `HP割合 A ${pct(r.ratio.a)} : B ${pct(r.ratio.b)} ／ 与ダメージ A ${Math.round(r.dealt.a)} : B ${Math.round(r.dealt.b)} ／ シード ${r.seed}`;
     $('result').hidden = false;
   }
@@ -317,6 +323,13 @@ export function initBattleScreen({ getTeams }) {
   prepare();
 
   return {
+    record,
+    // ホームから、モードを決めて対戦タブを開く。再生中は切り替えない。
+    openMode(next) {
+      if (!next || next === mode || (game?.running && !game.battle.state.done)) return;
+      for (const radio of document.querySelectorAll('input[name="mode"]')) radio.checked = radio.value === next;
+      setMode(next);
+    },
     // 「チーム編成」で保存したチームを選択肢に反映する。再生中は触らない。
     refreshTeams() {
       if (game?.running && !game.battle.state.done) return;

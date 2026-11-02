@@ -7,17 +7,58 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="site-header">
-    <h1>Auto Battler</h1>
-    <nav class="tabs">
-      <button class="tab" type="button" data-view="battle" aria-selected="true">対戦</button>
-      <button class="tab" type="button" data-view="team" aria-selected="false">チーム編成</button>
-      <button class="tab" type="button" data-view="piece" aria-selected="false">駒作成</button>
-      <button class="tab" type="button" data-view="data" aria-selected="false">データ一覧</button>
-    </nav>
+  <header class="topbar">
+    <button class="logo" type="button" data-view-link="home" title="ホームへ">⚔ Auto Battler</button>
+    <h1 id="view-title" class="view-title"></h1>
   </header>
 
+  <nav class="bottom-nav" aria-label="メニュー">
+    <button class="tab" type="button" data-view="home" aria-selected="true"><span class="tab-icon">🏠</span><span>ホーム</span></button>
+    <button class="tab" type="button" data-view="battle" aria-selected="false"><span class="tab-icon">⚔️</span><span>対戦</span></button>
+    <button class="tab" type="button" data-view="team" aria-selected="false"><span class="tab-icon">🧩</span><span>編成</span></button>
+    <button class="tab" type="button" data-view="piece" aria-selected="false"><span class="tab-icon">🛠️</span><span>駒作成</span></button>
+    <button class="tab" type="button" data-view="data" aria-selected="false"><span class="tab-icon">📖</span><span>図鑑</span></button>
+  </nav>
+
   <main>
+    <div id="view-home" hidden>
+      <section class="home">
+        <div class="home-side home-side--left">
+          <button type="button" class="mode-card mode-card--story" disabled>
+            <span class="mode-card-icon">📜</span><span class="mode-card-name">ストーリー</span><span class="soon">準備中</span>
+          </button>
+          <button type="button" class="mode-card mode-card--rogue" disabled>
+            <span class="mode-card-icon">🗝️</span><span class="mode-card-name">ローグライト</span><span class="soon">準備中</span>
+          </button>
+          <div id="home-stats" class="home-stats panel"></div>
+        </div>
+
+        <div class="home-center">
+          <div id="home-team" class="home-team"></div>
+          <div class="home-showcase">
+            <button id="home-prev" type="button" class="round-btn" title="前のチーム">◀</button>
+            <div id="home-board" class="board-wrap home-board"></div>
+            <button id="home-next" type="button" class="round-btn" title="次のチーム">▶</button>
+          </div>
+          <div id="home-count" class="muted home-count"></div>
+        </div>
+
+        <div class="home-side home-side--right">
+          <button type="button" class="big-btn big-btn--random" data-go="battle" data-mode="random">
+            <span class="big-btn-icon">🎲</span><span class="big-btn-name">ランダムマッチ</span><small>用意された相手と腕試し</small>
+          </button>
+          <button type="button" class="big-btn big-btn--custom" data-go="battle" data-mode="custom">
+            <span class="big-btn-icon">⚔️</span><span class="big-btn-name">カスタム対戦</span><small>好きなチーム同士を戦わせる</small>
+          </button>
+          <div class="home-sub">
+            <button type="button" class="sub-btn" data-go="team">🧩 編成</button>
+            <button type="button" class="sub-btn" data-go="piece">🛠️ 駒作成</button>
+            <button type="button" class="sub-btn" data-go="data">📖 図鑑</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
     <div id="view-battle" data-mode="custom">
       <section class="panel match-setup">
         <div class="mode-switch" role="radiogroup" aria-label="対戦モード">
@@ -85,7 +126,10 @@
         </div>
 
         <div id="result" class="panel result" hidden></div>
-        <ol id="log" class="log panel"></ol>
+        <details class="log-wrap">
+          <summary>対戦ログ</summary>
+          <ol id="log" class="log panel"></ol>
+        </details>
       </section>
     </div>
 
@@ -128,18 +172,22 @@
               <progress id="cost-bar" max="1" value="0"></progress>
             </div>
           </div>
-          <div class="editor-body">
+          <div class="editor-body editor-body--team">
             <div>
               <div id="edit-board" class="board-wrap"></div>
-              <p class="muted board-note">左が前（列1）。駒を選んでマスをクリックで配置、右クリックで外す</p>
+              <p id="tool-note" class="board-note"></p>
+              <p class="muted board-note">左が前（列1）。右クリックでも駒を外せます</p>
+              <div id="edit-hover" class="panel hover-info"></div>
             </div>
-            <aside id="edit-info" class="panel"></aside>
+            <aside class="palette-panel">
+              <h3>駒 <span class="muted">（種族 → コスト順）</span></h3>
+              <div id="palette" class="panel"></div>
+            </aside>
           </div>
-          <div id="edit-hover" class="panel hover-info"></div>
-          <h3>駒</h3>
-          <div id="palette" class="panel"></div>
           <h3>遺物 <span id="relic-count" class="muted"></span></h3>
           <div id="relic-picker" class="relic-picker"></div>
+          <h3>チームの詳細</h3>
+          <div id="edit-info" class="panel team-detail"></div>
         </section>
       </div>
     </div>
@@ -178,6 +226,14 @@
     </div>
 
     <div id="view-data" hidden>
+      <nav class="chip-nav" aria-label="図鑑の目次">
+        <a href="#data-presets" data-jump>プリセット</a>
+        <a href="#data-synergy" data-jump>種族シナジー</a>
+        <a href="#data-characters" data-jump>キャラクター</a>
+        <a href="#data-items" data-jump>道具</a>
+        <a href="#data-relics" data-jump>遺物</a>
+      </nav>
+      <h2 id="data-presets">プリセットチーム</h2>
       <section class="viewer">
         <div class="viewer-controls">
           <label>チーム
@@ -193,15 +249,15 @@
       </section>
 
       <section>
-        <h2>種族シナジー</h2>
+        <h2 id="data-synergy">種族シナジー</h2>
         <p class="muted">体数は、盤面に置いたその種族のキャラの数。満たした最大の段階だけが効きます。</p>
         <div class="table-wrap"><table id="synergy-table"></table></div>
-        <h2>キャラクター</h2>
-        <p class="muted">種族 → コスト → HP の順に並べています。</p>
+        <h2 id="data-characters">キャラクター</h2>
+        <div class="filter-row" id="tribe-filter"></div>
         <div class="table-wrap"><table id="character-table"></table></div>
-        <h2>道具</h2>
+        <h2 id="data-items">道具</h2>
         <div class="table-wrap"><table id="item-table"></table></div>
-        <h2>遺物</h2>
+        <h2 id="data-relics">遺物</h2>
         <div class="table-wrap"><table id="relic-table"></table></div>
       </section>
     </div>

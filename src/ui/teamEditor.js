@@ -139,6 +139,11 @@ export function initTeamEditor({ store, pieceStore }) {
     }).join('');
     const row = (label, kind) => `<div class="palette-row"><span class="palette-label">${label}</span>`
       + `${all.filter((p) => p.kind === kind).sort(byCost).map(button).join('')}</div>`;
+    const picked = tool && tool !== ERASER ? cat.piece(tool) : null;
+    $('tool-note').innerHTML = tool === ERASER ? '🧹 <strong>消す</strong>：マスをクリックすると駒を外します'
+      : picked ? `選択中：<strong>${escapeHtml(picked.icon)} ${escapeHtml(picked.name)}</strong>（コスト${pieceCost(picked)}）→ マスをクリックで配置`
+        : '<span class="muted">下の「駒」から選んで、マスをクリックで配置</span>';
+    $('tool-note').classList.toggle('tool-note--active', !!tool);
     const stale = outdated();
     const note = stale.length
       ? `<div class="palette-note">⚠ 自作駒 ${stale.map((p) => `「${escapeHtml(p.name)}」`).join('')}に、駒作成で更新された新しい版があります。`
@@ -268,7 +273,7 @@ export function initTeamEditor({ store, pieceStore }) {
     const url = URL.createObjectURL(new Blob([exportTeamJson(draft)], { type: 'application/json' }));
     const a = Object.assign(document.createElement('a'), { href: url, download: fileName() });
     a.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000); // すぐ消すとダウンロードが始まらないブラウザがある
     setMessage('ok', `${fileName()} をダウンロードしました`);
   });
 

@@ -1,6 +1,7 @@
 import { PARALYZE_TARGETS, STAT_NAMES } from '../data/effects.js';
 import { TRIBES } from '../data/tribes.js';
-import { costBreakdown } from '../core/cost.js';
+import { CHARACTERS, ITEMS } from '../data/pieces.js';
+import { costBreakdown, pieceCost } from '../core/cost.js';
 import { MAX_EFFECTS, STAT_RANGES, validatePiece } from '../core/piece.js';
 import { MAX_NAME, MAX_JSON_CHARS, exportPieceJson, exportPiecesJson, parsePieceJson, sanitizePiece } from '../storage/pieceJson.js';
 import { newPieceId } from '../storage/pieceStore.js';
@@ -193,7 +194,14 @@ export function initPieceEditor({ store }) {
       + `<table class="breakdown">${b.parts.map((p) => `<tr><td>${escapeHtml(p.label)}</td><td>${p.value.toFixed(2)}</td></tr>`).join('')}`
       + `<tr><td>実力の合計</td><td>${b.raw.toFixed(2)}</td></tr>`
       + `<tr><td>コスト（高い駒ほど割高）</td><td>${b.total}</td></tr></table>`;
-    $('piece-preview').innerHTML = `<h4>プレビュー</h4>${pieceSummary(form)}`;
+    // 比べやすいように、コストの近い標準の駒を並べる
+    const near = [...CHARACTERS, ...ITEMS]
+      .filter((p) => p.kind === form.kind && Math.abs(pieceCost(p) - b.total) <= 1)
+      .sort((x, y) => pieceCost(x) - pieceCost(y));
+    const ref = near.length
+      ? `<h4>コストの近い標準の駒</h4><ul class="ref-list">${near.map((p) => `<li>${pieceSummary(p)}</li>`).join('')}</ul>`
+      : '';
+    $('piece-preview').innerHTML = `<h4>プレビュー</h4>${pieceSummary(form)}${ref}`;
   }
 
   function renderAll() {
@@ -318,7 +326,7 @@ export function initPieceEditor({ store }) {
   const download = (text, name) => {
     const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
     Object.assign(document.createElement('a'), { href: url, download: name }).click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000); // すぐ消すとダウンロードが始まらないブラウザがある
     setMessage('ok', `${name} をダウンロードしました`);
   };
   const safeName = (s) => s.trim().replace(/[\\/:*?"<>|]/g, '_') || 'piece';

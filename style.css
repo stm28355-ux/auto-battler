@@ -22,16 +22,7 @@ body {
   line-height: 1.5;
 }
 
-main { max-width: 1100px; margin: 0 auto; padding: 0 16px 48px; }
-
-.site-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--cell-line);
-}
-.site-header h1 { margin: 0; font-size: 1.4rem; }
+main { max-width: 1100px; margin: 0 auto; padding: 0 16px calc(96px + env(safe-area-inset-bottom)); }
 
 .badge {
   font-size: 0.8rem;
@@ -123,18 +114,6 @@ th { color: var(--muted); font-weight: normal; }
 
 .check { display: flex; align-items: center; gap: 4px; }
 
-/* ---- タブ ---- */
-.tabs { display: flex; gap: 4px; margin-left: 16px; }
-.tab {
-  padding: 6px 14px;
-  background: transparent;
-  color: var(--muted);
-  border: 1px solid transparent;
-  border-radius: 6px;
-  font: inherit;
-  cursor: pointer;
-}
-.tab[aria-selected="true"] { background: var(--panel); color: var(--text); border-color: var(--cell-line); }
 [hidden] { display: none !important; }
 
 /* ---- 対戦の設定 ---- */
@@ -423,3 +402,196 @@ textarea {
 .row-table { border-collapse: collapse; font-size: 0.85em; margin-bottom: 0.5em; }
 .row-table th, .row-table td { padding: 2px 8px; text-align: right; border-bottom: 1px solid #444; }
 .row-table th:first-child, .row-table td:first-child { text-align: left; }
+
+/* ---- 上のバー・下のメニュー ---- */
+:root {
+  --accent: #f2c14e;
+  --nav-h: 64px;
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: linear-gradient(180deg, #262a35, #1f222b);
+  border-bottom: 1px solid var(--cell-line);
+}
+.logo {
+  padding: 4px 12px;
+  border: 0;
+  background: transparent;
+  font-size: 1.15rem;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+.view-title { margin: 0; font-size: 1rem; color: var(--muted); font-weight: normal; }
+
+.bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(30, 33, 42, 0.92);
+  border: 1px solid var(--cell-line);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+}
+.tab {
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  min-width: 72px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.tab-icon { font-size: 1.35rem; line-height: 1.2; filter: grayscale(0.6); }
+.tab:hover { color: var(--text); }
+.tab[aria-selected="true"] { background: #3b3a2a; color: var(--accent); box-shadow: inset 0 0 0 1px #6d6235; }
+.tab[aria-selected="true"] .tab-icon { filter: none; }
+@media (max-width: 520px) {
+  .bottom-nav { left: 8px; right: 8px; transform: none; justify-content: space-between; border-radius: 16px; }
+  .tab { min-width: 0; flex: 1; padding: 4px 2px; }
+}
+
+/* ---- ホーム ---- */
+.home {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 260px;
+  gap: 20px;
+  align-items: center;
+  margin-top: 16px;
+  padding: 20px;
+  min-height: calc(100vh - 180px);
+  border-radius: 16px;
+  background:
+    radial-gradient(ellipse at 50% 40%, rgba(242, 193, 78, 0.14), transparent 60%),
+    radial-gradient(ellipse at 10% 90%, rgba(90, 169, 230, 0.12), transparent 50%),
+    linear-gradient(160deg, #262b38, #1a1c22);
+  border: 1px solid var(--cell-line);
+}
+.home-side { display: grid; gap: 12px; align-content: center; }
+.home-center { display: grid; justify-items: center; gap: 8px; }
+.home-team { display: grid; justify-items: center; text-align: center; }
+.home-team strong { font-size: 1.3rem; }
+.home-team-kind {
+  font-size: 0.75rem;
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: #3b3a2a;
+  color: var(--accent);
+}
+.home-showcase { display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center; }
+.home-board { flex: 1; max-width: 460px; min-height: 280px; background: rgba(0, 0, 0, 0.18); }
+.home-count { font-size: 0.8rem; }
+.round-btn { width: 40px; height: 40px; padding: 0; border-radius: 50%; flex: none; }
+
+.big-btn, .mode-card {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 16px;
+  text-align: left;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: transform 0.08s, filter 0.08s;
+}
+.big-btn:not(:disabled):hover, .sub-btn:hover { filter: brightness(1.12); }
+.big-btn:not(:disabled):active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35); }
+.big-btn-icon, .mode-card-icon { font-size: 1.8rem; line-height: 1; }
+.big-btn-name { font-size: 1.35rem; font-weight: bold; letter-spacing: 0.06em; text-shadow: 0 2px 2px rgba(0, 0, 0, 0.4); }
+.big-btn small { color: rgba(255, 255, 255, 0.8); }
+.big-btn--random { background: linear-gradient(180deg, #e2604f, #a8322a); }
+.big-btn--custom { background: linear-gradient(180deg, #5b74d6, #3b4aa0); }
+.home-sub { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.sub-btn { padding: 8px 4px; font-size: 0.8rem; border-radius: 10px; }
+
+.mode-card { position: relative; background: linear-gradient(180deg, #3a3f4c, #2a2e38); }
+.mode-card:disabled { opacity: 1; cursor: not-allowed; filter: grayscale(0.5); }
+.mode-card-name { font-size: 1.05rem; font-weight: bold; }
+.mode-card--story { background: linear-gradient(180deg, #6b5a3a, #43381f); }
+.mode-card--rogue { background: linear-gradient(180deg, #4a3a6b, #2d2343); }
+.soon {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--accent);
+}
+.home-stats { display: grid; gap: 6px; font-size: 0.85rem; background: rgba(0, 0, 0, 0.25); }
+.home-stats div { display: grid; }
+.home-stats strong { font-size: 0.95rem; }
+#view-data h2 { scroll-margin-top: 110px; }
+@media (max-width: 900px) {
+  .home { grid-template-columns: 1fr; min-height: 0; }
+  .home-side--right { order: -1; }
+  .home-side--left { grid-template-columns: 1fr 1fr; }
+  .home-stats { grid-column: 1 / -1; }
+}
+
+/* ---- 対戦の結果・ログ ---- */
+.verdict { font-size: 2.4rem; font-weight: 900; letter-spacing: 0.15em; line-height: 1.2; color: var(--muted); }
+.verdict--win { color: var(--accent); text-shadow: 0 0 18px rgba(242, 193, 78, 0.5); }
+.verdict--lose { color: #8fa3c4; }
+.log-wrap { margin-top: 12px; }
+.log-wrap summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+#start { padding: 8px 22px; font-weight: bold; }
+
+/* ---- 編成：選択中の駒 ---- */
+#tool-note { padding: 4px 8px; border-radius: 6px; font-size: 0.85rem; }
+.tool-note--active { background: #3b3a2a; border: 1px solid #6d6235; }
+
+/* ---- 駒作成：比べる駒 ---- */
+.ref-list { margin-top: 4px; padding-left: 1em; font-size: 0.8rem; display: grid; gap: 6px; }
+
+/* ---- 図鑑 ---- */
+.chip-nav, .filter-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 8px; }
+.chip-nav { position: sticky; top: 52px; z-index: 10; padding: 6px 0; background: var(--bg); }
+.chip-nav a, .chip {
+  padding: 3px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--cell-line);
+  background: var(--panel);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.85rem;
+}
+.chip { border-color: var(--tribe, var(--cell-line)); }
+.chip.selected { background: color-mix(in srgb, var(--tribe, var(--accent)) 40%, var(--panel)); }
+
+/* ---- 対戦：モード切り替え（ラジオボタンを切り替えタブの見た目にする） ---- */
+.mode-switch { gap: 6px; }
+.mode-switch label { padding: 6px 16px; border-radius: 999px; border: 1px solid var(--cell-line); cursor: pointer; color: var(--muted); }
+.mode-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.mode-switch label:has(input:checked) { background: #3b3a2a; border-color: #6d6235; color: var(--accent); font-weight: bold; }
+.mode-switch label:has(input:focus-visible) { outline: 2px solid var(--accent); }
+
+/* ---- 編成：盤面の横に駒の一覧 ---- */
+.editor-body--team { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); }
+.palette-panel h3 { margin-top: 0 !important; }
+.palette-panel #palette { max-height: 520px; overflow-y: auto; }
+.palette-panel .palette-row { align-items: flex-start; }
+.palette-panel .palette-label { width: 100%; flex-direction: row; align-items: center; gap: 6px; margin-top: 4px; }
+.team-detail { columns: 2 280px; column-gap: 24px; }
+.team-detail > * { break-inside: avoid; }
+@media (max-width: 900px) {
+  .editor-body--team { grid-template-columns: 1fr; }
+}
