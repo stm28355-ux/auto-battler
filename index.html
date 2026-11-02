@@ -9,32 +9,94 @@
 <body>
   <header class="site-header">
     <h1>Auto Battler</h1>
-    <span class="badge">Phase 1: 盤面ビューア</span>
+    <nav class="tabs">
+      <button class="tab" type="button" data-view="battle" aria-selected="true">対戦</button>
+      <button class="tab" type="button" data-view="data" aria-selected="false">データ一覧</button>
+    </nav>
   </header>
 
   <main>
-    <section class="viewer">
-      <div class="viewer-controls">
-        <label>チーム
-          <select id="team-select"></select>
+    <div id="view-battle">
+      <section class="panel match-setup">
+        <label>チームA <select id="team-a"></select></label>
+        <label>チームB <select id="team-b"></select></label>
+        <label>シード <input id="seed" type="number" value="1" min="0" step="1">
+          <button id="seed-random" type="button" title="ランダムなシードにする">🎲</button></label>
+        <label>速度
+          <select id="speed">
+            <option value="0.5">0.5倍</option>
+            <option value="1" selected>1倍</option>
+            <option value="2">2倍</option>
+            <option value="4">4倍</option>
+            <option value="8">8倍</option>
+          </select>
         </label>
-        <label class="check"><input type="checkbox" id="mirror"> 左右反転</label>
-      </div>
-      <div class="viewer-body">
-        <div id="board-wrap" class="board-wrap"></div>
-        <aside id="team-info" class="panel"></aside>
-      </div>
-      <div id="hover-info" class="panel hover-info">マスにマウスを乗せると、隣接マスと駒の詳細を表示します。</div>
-    </section>
+        <div class="buttons">
+          <button id="start" type="button" class="primary">対戦開始</button>
+          <button id="pause" type="button" disabled>一時停止</button>
+          <button id="skip" type="button" disabled>結果までスキップ</button>
+        </div>
+        <ul id="setup-errors" class="errors"></ul>
+      </section>
 
-    <section>
-      <h2>キャラクター</h2>
-      <div class="table-wrap"><table id="character-table"></table></div>
-      <h2>道具</h2>
-      <div class="table-wrap"><table id="item-table"></table></div>
-      <h2>遺物</h2>
-      <div class="table-wrap"><table id="relic-table"></table></div>
-    </section>
+      <section id="arena" class="arena">
+        <div class="arena-top">
+          <div class="side-head side-head--a">
+            <div id="name-a" class="side-name"></div>
+            <div id="hpbar-a" class="hpbar"><div id="hp-fill-a" class="hpbar-fill"></div><span id="hp-text-a" class="hpbar-text"></span></div>
+            <div id="status-a" class="status"></div>
+          </div>
+          <div class="clock">
+            <div id="clock-text">0.00 / 30.00 秒</div>
+            <progress id="clock" max="30" value="0"></progress>
+          </div>
+          <div class="side-head side-head--b">
+            <div id="name-b" class="side-name"></div>
+            <div id="hpbar-b" class="hpbar"><div id="hp-fill-b" class="hpbar-fill"></div><span id="hp-text-b" class="hpbar-text"></span></div>
+            <div id="status-b" class="status"></div>
+          </div>
+        </div>
+
+        <div class="arena-boards">
+          <div class="side-board">
+            <div id="board-a" class="board-wrap"></div>
+            <div id="info-a" class="panel unit-info"></div>
+          </div>
+          <div class="side-board">
+            <div id="board-b" class="board-wrap"></div>
+            <div id="info-b" class="panel unit-info"></div>
+          </div>
+        </div>
+
+        <div id="result" class="panel result" hidden></div>
+        <ol id="log" class="log panel"></ol>
+      </section>
+    </div>
+
+    <div id="view-data" hidden>
+      <section class="viewer">
+        <div class="viewer-controls">
+          <label>チーム
+            <select id="team-select"></select>
+          </label>
+          <label class="check"><input type="checkbox" id="mirror"> 左右反転</label>
+        </div>
+        <div class="viewer-body">
+          <div id="board-wrap" class="board-wrap"></div>
+          <aside id="team-info" class="panel"></aside>
+        </div>
+        <div id="hover-info" class="panel hover-info">マスにマウスを乗せると、隣接マスと駒の詳細を表示します。</div>
+      </section>
+
+      <section>
+        <h2>キャラクター</h2>
+        <div class="table-wrap"><table id="character-table"></table></div>
+        <h2>道具</h2>
+        <div class="table-wrap"><table id="item-table"></table></div>
+        <h2>遺物</h2>
+        <div class="table-wrap"><table id="relic-table"></table></div>
+      </section>
+    </div>
   </main>
 
   <script type="module" src="src/main.js"></script>

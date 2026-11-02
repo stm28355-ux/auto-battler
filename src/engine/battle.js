@@ -170,7 +170,8 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
     else if (state.step >= MAX_STEPS) decideByRatio('timeout');
   }
 
-  return { sides, state, advance };
+  // events / history は log: true のときだけ溜まる（画面はここから新しいイベントを読む）
+  return { sides, state, events, history, advance };
 }
 
 export function runBattle(teamA, teamB, catalog, options) {

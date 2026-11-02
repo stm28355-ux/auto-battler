@@ -22,7 +22,7 @@ GitHub Pages で公開中: https://stm28355-ux.github.io/auto-battler/
 | `src/data/` | ボード・駒・遺物・種族・プリセットチームの定義 |
 | `src/core/` | コスト計算・チーム検証・前線判定など（DOMに依存しない） |
 | `src/engine/` | 戦闘エンジン（`runBattle` / `createBattle`。DOMに依存しない） |
-| `src/ui/` | 画面描画 |
+| `src/ui/` | 画面（`battleScreen.js` 対戦タブ、`dataView.js` データ一覧タブ、`boardView.js` 盤面SVG） |
 | `test/` | テスト（`node --test`） |
 | `tools/` | 開発用スクリプト |
 

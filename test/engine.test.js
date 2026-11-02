@@ -162,6 +162,21 @@ test('同じ入力・同じシードなら結果もログも完全に一致す�
   assert.equal(run(7), run(7));
 });
 
+test('画面用に、ステップごとに events / history を読める（log: true のときだけ）', () => {
+  const catalog = createCatalog();
+  const [a, b] = [PRESET_TEAMS[0], PRESET_TEAMS[1]];
+  const quiet = createBattle(a, b, catalog);
+  const loud = createBattle(a, b, catalog, { log: true });
+  for (let i = 0; i < 40; i++) {
+    quiet.advance();
+    loud.advance();
+  }
+  assert.equal(quiet.events.length, 0);
+  assert.equal(loud.history.length, 40);
+  assert.ok(loud.events.some((e) => e.type === 'attack'));
+  assert.deepEqual(quiet.sides.a.hp, loud.sides.a.hp); // ログの有無で結果が変わらない
+});
+
 test('プリセットチーム同士の総当たりが30秒以内に必ず決着する', () => {
   const catalog = createCatalog();
   for (const a of PRESET_TEAMS) {
