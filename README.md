@@ -15,6 +15,7 @@ GitHub Pages で公開中: https://stm28355-ux.github.io/auto-battler/
    - Live Server を使わない場合は `npm run serve` → http://localhost:5173/
    - ESモジュールを使っているため、`index.html` をダブルクリックで開くと動かない
 3. `npm test` でテスト（Node.js が必要）
+   - バランスの確認は `node tools/balance.js`（使い方と数値は [docs/spec.md](docs/spec.md) §11、調整用の値は `src/data/balance.js`）
 4. 変更をコミットして `main` に push すると、数分で GitHub Pages に反映される
 
 | フォルダ | 内容 |
@@ -25,7 +26,7 @@ GitHub Pages で公開中: https://stm28355-ux.github.io/auto-battler/
 | `src/storage/` | チーム・自作駒の保存（localStorage）とJSON入出力・検証（手編集したJSONも想定して厳しく検査する） |
 | `src/ui/` | 画面（`pieceEditor.js` 駒作成タブ、`teamEditor.js` チーム編成タブ、`battleScreen.js` 対戦タブ、`dataView.js` データ一覧タブ、`boardView.js` 盤面SVG） |
 | `test/` | テスト（`node --test`） |
-| `tools/` | 開発用スクリプト |
+| `tools/` | 開発用スクリプト（`serve.mjs` 開発サーバー、`balance.js` バランス調整ツール） |
 
 ```bash
 git add .

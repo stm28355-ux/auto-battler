@@ -178,7 +178,8 @@ export function initPieceEditor({ store }) {
     const b = costBreakdown(form);
     $('piece-cost').innerHTML = `<h4>コスト</h4><p class="cost-total">${b.total}</p>`
       + `<table class="breakdown">${b.parts.map((p) => `<tr><td>${escapeHtml(p.label)}</td><td>${p.value.toFixed(2)}</td></tr>`).join('')}`
-      + `<tr><td>合計（切り上げ）</td><td>${b.raw.toFixed(2)} → ${b.total}</td></tr></table>`;
+      + `<tr><td>実力の合計</td><td>${b.raw.toFixed(2)}</td></tr>`
+      + `<tr><td>コスト（高い駒ほど割高）</td><td>${b.total}</td></tr></table>`;
     $('piece-preview').innerHTML = `<h4>プレビュー</h4>${pieceSummary(form)}`;
   }
 

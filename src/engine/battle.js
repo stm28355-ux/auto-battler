@@ -1,10 +1,10 @@
+import { BALANCE } from '../data/balance.js';
 import { createRng } from './rng.js';
 import { resolveTeam } from './resolve.js';
 
 export const DT = 0.05; // 1ステップの秒数
 export const MAX_STEPS = 600; // 30秒
 const POISON_TICK_STEPS = 2; // 毒は0.1秒ごと
-const PARALYZE_FACTOR = 0.5;
 const EPS = 1e-9;
 
 const SIDES = ['a', 'b'];
@@ -18,8 +18,10 @@ function initSide(team, catalog) {
     resolved,
     hp: resolved.maxHp,
     maxHp: resolved.maxHp,
-    poison: 0, // このチームにかかっている毒の蓄積量
+    poison: 0, // このチームにかかっている毒の蓄積量（有効なものの合計）
+    poisons: [], // 毒の付与の記録 { stacks, until }（until は消えるステップ。永続なら Infinity）
     dealt: 0, // 相手に与えたダメージの合計（毒を含む）
+    poisonDealt: 0, // そのうち毒によるダメージ（バランス調整で見る）
     units: resolved.units.map((unit) => ({ unit, progress: 0, paraSteps: 0 })),
     healers: resolved.healers.map((h) => ({ amount: h.amount, every: stepsOf(h.interval), counter: 0 })),
   };
@@ -78,6 +80,7 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
       maxHp: { a: sides.a.maxHp, b: sides.b.maxHp },
       ratio,
       dealt: { a: sides.a.dealt, b: sides.b.dealt },
+      poisonDealt: { a: sides.a.poisonDealt, b: sides.b.poisonDealt },
       seed,
       ...(log && { log: events, history }),
     };
@@ -101,7 +104,7 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
       for (const s of sides[key].units) {
         const slowed = s.paraSteps > 0;
         if (slowed) s.paraSteps -= 1;
-        s.progress += s.unit.spd * (slowed ? PARALYZE_FACTOR : 1) * DT;
+        s.progress += s.unit.spd * (slowed ? BALANCE.paralyzeFactor : 1) * DT;
         if (s.progress >= 1 - EPS) {
           s.progress -= 1;
           attackers.push({ key, s });
@@ -115,7 +118,7 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
       const foeKey = other(key);
       const foe = sides[foeKey];
       const front = pickFront(foe, s.unit.row);
-      const dmg = (s.unit.atk * s.unit.atkMult * 100) / (100 + front.unit.def);
+      const dmg = (s.unit.atk * s.unit.atkMult * 100 * BALANCE.damageScale) / (100 + front.unit.def);
       damage[foeKey] += dmg;
       own.dealt += dmg;
       emit({ type: 'attack', side: key, from: s.unit.pos, to: front.unit.pos, dmg });
@@ -123,8 +126,11 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
       for (const effect of s.unit.onHit) {
         if (effect.chance < 1 && rng() >= effect.chance) continue;
         if (effect.type === 'poison') {
-          foe.poison += effect.stacks + own.resolved.poisonBonus;
-          emit({ type: 'poison', side: key, stacks: effect.stacks + own.resolved.poisonBonus, total: foe.poison });
+          const stacks = effect.stacks + own.resolved.poisonBonus;
+          const lasts = BALANCE.poisonDuration === null ? Infinity : stepsOf(BALANCE.poisonDuration);
+          foe.poisons.push({ stacks, until: state.step + lasts });
+          foe.poison += stacks;
+          emit({ type: 'poison', side: key, stacks, total: foe.poison });
         } else {
           const victim = pickParalyzeTarget(effect, foe, front, rng);
           victim.paraSteps += stepsOf(effect.duration);
@@ -136,10 +142,17 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
     // 3. 毒（防御無視）。0.1秒ごとに蓄積量ぶんのダメージ
     if (state.step % POISON_TICK_STEPS === 0) {
       for (const key of SIDES) {
-        if (sides[key].poison <= 0) continue;
-        damage[key] += sides[key].poison;
-        sides[other(key)].dealt += sides[key].poison;
-        emit({ type: 'poisonTick', side: key, dmg: sides[key].poison });
+        const victim = sides[key];
+        if (BALANCE.poisonDuration !== null) {
+          victim.poisons = victim.poisons.filter((p) => p.until > state.step); // 切れた毒を外す
+          victim.poison = victim.poisons.reduce((sum, p) => sum + p.stacks, 0);
+        }
+        if (victim.poison <= 0) continue;
+        const dmg = victim.poison * BALANCE.poisonDamage;
+        damage[key] += dmg;
+        sides[other(key)].dealt += dmg;
+        sides[other(key)].poisonDealt += dmg;
+        emit({ type: 'poisonTick', side: key, dmg });
       }
     }
 

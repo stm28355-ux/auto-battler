@@ -9,7 +9,7 @@ export const TIERS = {
 };
 
 export const PRESET_TEAMS = [
-  // ---- ふつう ----
+  // ---- ふつう（コスト上限の6〜7割）----
   {
     id: 'p_square_knights',
     name: '鉄壁の騎士団',
@@ -20,7 +20,10 @@ export const PRESET_TEAMS = [
       { pos: [1, 2], pieceId: 'i_banner' },
       { pos: [2, 1], pieceId: 'c_squire' },
       { pos: [2, 2], pieceId: 'c_berserker' },
+      { pos: [2, 3], pieceId: 'i_sword' },
       { pos: [3, 1], pieceId: 'c_squire' },
+      { pos: [3, 2], pieceId: 'i_shield' },
+      { pos: [3, 3], pieceId: 'c_drone' },
     ],
     relics: ['r_amulet'],
   },
@@ -34,11 +37,11 @@ export const PRESET_TEAMS = [
       { pos: [1, 4], pieceId: 'c_viper' },
       { pos: [2, 1], pieceId: 'c_bear' },
       { pos: [2, 3], pieceId: 'i_banner' },
-      { pos: [2, 5], pieceId: 'i_spear' },
+      { pos: [2, 5], pieceId: 'i_gear' },
       { pos: [3, 2], pieceId: 'c_wolf' },
-      { pos: [3, 4], pieceId: 'c_viper' },
+      { pos: [3, 4], pieceId: 'c_bear' },
     ],
-    relics: ['r_totem'],
+    relics: [],
   },
   {
     id: 'p_pentagram_cult',
@@ -49,13 +52,16 @@ export const PRESET_TEAMS = [
       { pos: [1, 3], pieceId: 'c_drone' },
       { pos: [2, 1], pieceId: 'c_apprentice' },
       { pos: [2, 2], pieceId: 'i_vial' },
+      { pos: [2, 3], pieceId: 'c_hexer' },
+      { pos: [2, 4], pieceId: 'i_banner' },
       { pos: [3, 1], pieceId: 'c_apprentice' },
       { pos: [3, 2], pieceId: 'c_hexer' },
+      { pos: [3, 3], pieceId: 'i_vial' },
     ],
     relics: ['r_grimoire'],
   },
 
-  // ---- やさしい ----
+  // ---- やさしい（4割以下）----
   {
     id: 'p_square_recruits',
     name: '新兵の訓練隊',
@@ -68,6 +74,7 @@ export const PRESET_TEAMS = [
       { pos: [2, 2], pieceId: 'i_gear' },
       { pos: [3, 1], pieceId: 'c_apprentice' },
       { pos: [3, 2], pieceId: 'i_vial' },
+      { pos: [3, 3], pieceId: 'i_sword' },
     ],
     relics: [],
   },
@@ -78,9 +85,12 @@ export const PRESET_TEAMS = [
     tier: 'easy',
     slots: [
       { pos: [1, 2], pieceId: 'c_wolf' },
+      { pos: [1, 4], pieceId: 'c_viper' },
       { pos: [2, 1], pieceId: 'c_wolf' },
       { pos: [2, 3], pieceId: 'i_spear' },
+      { pos: [2, 5], pieceId: 'i_gear' },
       { pos: [3, 2], pieceId: 'c_viper' },
+      { pos: [3, 4], pieceId: 'c_squire' },
     ],
     relics: [],
   },
@@ -90,25 +100,27 @@ export const PRESET_TEAMS = [
     board: 'pentagram',
     tier: 'easy',
     slots: [
+      { pos: [1, 3], pieceId: 'c_drone' },
       { pos: [2, 1], pieceId: 'c_squire' },
       { pos: [2, 2], pieceId: 'i_spear' },
+      { pos: [2, 3], pieceId: 'c_wolf' },
       { pos: [3, 1], pieceId: 'c_squire' },
       { pos: [3, 2], pieceId: 'i_gear' },
     ],
     relics: [],
   },
 
-  // ---- つよい ----
+  // ---- つよい（9割前後）----
   {
     id: 'p_square_beastking',
     name: '獣王の軍勢',
     board: 'square',
     tier: 'hard',
     slots: [
-      { pos: [1, 1], pieceId: 'c_bear' },
+      { pos: [1, 1], pieceId: 'c_behemoth' },
       { pos: [1, 2], pieceId: 'i_banner' },
-      { pos: [1, 3], pieceId: 'i_sword' },
-      { pos: [2, 1], pieceId: 'c_wolf' },
+      { pos: [1, 3], pieceId: 'i_blade' },
+      { pos: [2, 1], pieceId: 'c_bear' },
       { pos: [2, 2], pieceId: 'c_wolf' },
       { pos: [2, 3], pieceId: 'i_vial' },
       { pos: [3, 1], pieceId: 'c_bear' },
@@ -123,13 +135,13 @@ export const PRESET_TEAMS = [
     board: 'honeycomb',
     tier: 'hard',
     slots: [
-      { pos: [1, 2], pieceId: 'c_drone' },
+      { pos: [1, 2], pieceId: 'c_fighter' },
       { pos: [1, 4], pieceId: 'c_golem' },
       { pos: [2, 1], pieceId: 'c_golem' },
-      { pos: [2, 3], pieceId: 'i_banner' },
+      { pos: [2, 3], pieceId: 'i_crown' },
       { pos: [2, 5], pieceId: 'i_gear' },
       { pos: [3, 2], pieceId: 'c_medibot' },
-      { pos: [3, 4], pieceId: 'c_drone' },
+      { pos: [3, 4], pieceId: 'c_fighter' },
     ],
     relics: ['r_heart', 'r_hourglass', 'r_amulet'],
   },
@@ -139,15 +151,17 @@ export const PRESET_TEAMS = [
     board: 'pentagram',
     tier: 'hard',
     slots: [
-      { pos: [1, 3], pieceId: 'c_sorcerer' },
+      { pos: [1, 3], pieceId: 'c_archmage' },
       { pos: [2, 1], pieceId: 'c_hexer' },
       { pos: [2, 2], pieceId: 'i_vial' },
       { pos: [2, 3], pieceId: 'c_apprentice' },
       { pos: [2, 4], pieceId: 'i_stungun' },
+      { pos: [2, 5], pieceId: 'c_viper' },
       { pos: [3, 1], pieceId: 'c_hexer' },
       { pos: [3, 2], pieceId: 'i_vial' },
       { pos: [3, 3], pieceId: 'c_apprentice' },
       { pos: [3, 4], pieceId: 'i_banner' },
+      { pos: [4, 3], pieceId: 'c_sorcerer' },
     ],
     relics: ['r_grimoire', 'r_hourglass', 'r_amulet'],
   },

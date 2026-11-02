@@ -15,7 +15,7 @@ export const TRIBES = {
     color: '#9b6ad6',
     bonuses: {
       2: [{ type: 'poisonBonus', value: 1 }],
-      3: [{ type: 'poisonBonus', value: 2 }],
+      3: [{ type: 'poisonBonus', value: 1.5 }],
     },
   },
   beast: {
@@ -23,7 +23,7 @@ export const TRIBES = {
     color: '#6aa84f',
     bonuses: {
       2: [{ type: 'statBuff', stat: 'spd', value: 0.15, mode: 'pct', scope: 'tribe' }],
-      3: [{ type: 'statBuff', stat: 'spd', value: 0.3, mode: 'pct', scope: 'tribe' }],
+      3: [{ type: 'statBuff', stat: 'spd', value: 0.22, mode: 'pct', scope: 'tribe' }],
     },
   },
   machine: {

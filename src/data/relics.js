@@ -2,11 +2,11 @@
 
 export const RELICS = [
   { id: 'r_whetstone', name: '砥石', icon: '🪨',
-    effects: [{ type: 'statBuff', stat: 'atk', value: 5, mode: 'add', scope: 'team' }] },
+    effects: [{ type: 'statBuff', stat: 'atk', value: 4, mode: 'add', scope: 'team' }] },
   { id: 'r_amulet', name: '守りの護符', icon: '🧿',
     effects: [{ type: 'statBuff', stat: 'def', value: 10, mode: 'add', scope: 'team' }] },
   { id: 'r_hourglass', name: '砂時計', icon: '⏳',
-    effects: [{ type: 'statBuff', stat: 'spd', value: 0.1, mode: 'pct', scope: 'team' }] },
+    effects: [{ type: 'statBuff', stat: 'spd', value: 0.08, mode: 'pct', scope: 'team' }] },
   { id: 'r_heart', name: '生命の結晶', icon: '💎',
     effects: [{ type: 'statBuff', stat: 'hp', value: 0.1, mode: 'pct', scope: 'team' }] },
   { id: 'r_warhorn', name: '戦の角笛', icon: '📯',

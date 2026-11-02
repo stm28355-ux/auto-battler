@@ -242,7 +242,10 @@ export function initBattleScreen({ getTeams }) {
   const randomPool = () => entries.filter((e) => e.id.startsWith('preset:'));
 
   function drawOpponent() {
-    const next = pickOpponent(randomPool(), $('tier').value, Math.random, opponent?.id);
+    // 自分と同じチームは避ける（同じチーム同士は毎回引き分けになる）。ほかに候補がなければ許す
+    const others = randomPool().filter((e) => e.id !== $('team-a').value);
+    const next = pickOpponent(others, $('tier').value, Math.random, opponent?.id)
+      ?? pickOpponent(randomPool(), $('tier').value, Math.random, opponent?.id);
     if (!next) return;
     opponent = next;
     $('team-b').value = next.id;
@@ -290,6 +293,9 @@ export function initBattleScreen({ getTeams }) {
     radio.addEventListener('change', () => radio.checked && setMode(radio.value));
   }
   $('opponent-draw').addEventListener('click', drawOpponent);
+  $('team-a').addEventListener('change', () => {
+    if (mode === 'random' && opponent && $('team-a').value === opponent.id) drawOpponent(); // 自分と同じチームが相手にならないように
+  });
   $('tier').addEventListener('change', drawOpponent);
   $('pause').addEventListener('click', () => {
     game.paused = !game.paused;

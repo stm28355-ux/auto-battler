@@ -5,6 +5,10 @@ import { createCatalog } from '../src/core/catalog.js';
 import { createBattle, runBattle } from '../src/engine/battle.js';
 import { resolveTeam } from '../src/engine/resolve.js';
 import { createRng } from '../src/engine/rng.js';
+import { BALANCE, NEUTRAL_BALANCE, useBalance } from '../src/data/balance.js';
+
+// 戦闘の仕組みそのものを確かめるテスト。調整後の数値ではなく、調整前の数値（ダメージ式どおり・毒は1蓄積1ダメージ）で行う。
+useBalance(NEUTRAL_BALANCE);
 
 const ch = (id, o = {}) => ({ id, kind: 'character', name: id, icon: '?', tribe: 'warrior', hp: 1000, atk: 10, def: 0, spd: 1, effects: [], ...o });
 const item = (id, o = {}) => ({ id, kind: 'item', name: id, icon: '?', atk: 0, def: 0, effects: [], ...o });
@@ -76,6 +80,65 @@ test('毒は防御を無視して0.1秒ごとに蓄積量ぶん入り、重ね�
   assert.equal(battle.sides.b.poison, 4);
 });
 
+// 調整用の数値（src/data/balance.js）を変えると、戦闘にその通り反映される
+function withBalance(changes, fn) {
+  const saved = structuredClone(BALANCE);
+  useBalance(changes);
+  try {
+    return fn();
+  } finally {
+    useBalance(saved);
+  }
+}
+
+test('調整用の数値：damageScale は通常攻撃のダメージにかかる', () => {
+  const catalog = createCatalog([ch('A', { atk: 100 }), ch('B')]);
+  const hpAfterOneSecond = () => {
+    const battle = createBattle(team([[[1, 1], 'A']]), team([[[1, 1], 'B']]), catalog);
+    for (let i = 0; i < 20; i++) battle.advance();
+    return battle.sides.b.hp;
+  };
+  assert.equal(hpAfterOneSecond(), 900);
+  assert.equal(withBalance({ damageScale: 0.5 }, hpAfterOneSecond), 950);
+});
+
+test('調整用の数値：poisonDamage は毒1蓄積あたりのダメージ', () => {
+  const catalog = createCatalog([
+    ch('A', { effects: [{ type: 'poison', stacks: 2, chance: 1 }] }),
+    ch('B', { def: 100, spd: 0.5 }),
+  ]);
+  const hpAfterTwoSeconds = () => {
+    const battle = createBattle(team([[[1, 1], 'A']]), team([[[1, 1], 'B']]), catalog);
+    for (let i = 0; i < 40; i++) battle.advance();
+    return battle.sides.b.hp;
+  };
+  close(hpAfterTwoSeconds(), 1000 - 10 - 24);
+  close(withBalance({ poisonDamage: 0.5 }, hpAfterTwoSeconds), 1000 - 10 - 12);
+});
+
+test('調整用の数値：poisonDuration があると、毒は付与から指定の秒数で消える', () => {
+  const catalog = createCatalog([
+    ch('A', { effects: [{ type: 'poison', stacks: 2, chance: 1 }] }),
+    ch('B', { def: 100, spd: 0.5 }),
+  ]);
+  withBalance({ poisonDuration: 1 }, () => {
+    const battle = createBattle(team([[[1, 1], 'A']]), team([[[1, 1], 'B']]), catalog);
+    for (let i = 0; i < 40; i++) battle.advance();
+    // 1回目の毒は20〜38ステップの10回ぶん(2×10)で消え、2回目(40ステップ)の毒が2だけ残る
+    assert.equal(battle.sides.b.poison, 2);
+    close(battle.sides.b.hp, 1000 - 10 - 22);
+  });
+});
+
+test('調整用の数値：paralyzeFactor が1なら麻痺しても攻撃速度は変わらない', () => {
+  const stats = { atk: 10, def: 100 };
+  const paralyze = { type: 'paralyze', target: 'front', duration: 3, chance: 1 };
+  const catalog = createCatalog([ch('A', { ...stats, spd: 0.5, effects: [paralyze] }), ch('B', { ...stats })]);
+  const run = () => runBattle(team([[[1, 1], 'A']]), team([[[1, 1], 'B']]), catalog, { log: true });
+  assert.ok(attacks(run(), 'b').length < 30);
+  assert.equal(withBalance({ paralyzeFactor: 1 }, () => attacks(run(), 'b').length), 30);
+});
+
 test('麻痺は攻撃速度を半減する', () => {
   const stats = { atk: 10, def: 100 };
   const paralyze = { type: 'paralyze', target: 'front', duration: 3, chance: 1 };
@@ -136,9 +199,9 @@ test('実効ステータス：隣接する道具・遺物・種族シナジー�
   const catalog = createCatalog();
   const t = resolveTeam(team([[[1, 1], 'c_squire'], [[1, 2], 'i_sword'], [[2, 1], 'i_banner']], ['r_whetstone']), catalog);
   const squire = t.units[0];
-  assert.equal(squire.atk, 25 + 25 + 5); // 基本 + 剣 + 砥石
+  assert.equal(squire.atk, 25 + 25 + 4); // 基本 + 剣 + 砥石
   assert.equal(squire.def, 20);
-  close(squire.atkMult, 1.3);
+  close(squire.atkMult, 1.5); // 軍旗
 
   const warriors = resolveTeam(team([[[1, 1], 'c_squire'], [[2, 1], 'c_squire'], [[3, 1], 'c_squire']]), catalog);
   assert.deepEqual(warriors.units.map((u) => u.def), [50, 50, 50]); // 戦士3体 → 防御+30
