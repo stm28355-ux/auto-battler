@@ -53,6 +53,20 @@ export function createTeamStore(storage = defaultStorage(LEGACY_KEY), envId = ac
   };
 }
 
+// 初めてその環境を開いたとき（保存先がまだ一度も作られていないとき）だけ、前の環境の保存チームをコピーする。
+// 一度でも保存先ができたら（あとで全部消して空にしても）、二度とコピーしない。コピーしたチームの数を返す。
+export function copyTeamsOnce(storage, fromEnvId, toEnvId) {
+  const to = teamKey(toEnvId);
+  if (!fromEnvId || fromEnvId === toEnvId || storage.getItem(to) !== null) return 0;
+  const teams = createTeamStore(storage, fromEnvId).load();
+  try {
+    storage.setItem(to, JSON.stringify(teams));
+  } catch {
+    return 0;
+  }
+  return teams.filter(Boolean).length;
+}
+
 // 対戦で選べるチーム一覧（プリセット + 保存スロット）。
 export function listBattleTeams(store) {
   const presets = PRESET_TEAMS.map((team) => ({

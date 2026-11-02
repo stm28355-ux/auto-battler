@@ -104,3 +104,20 @@ test('チームのJSONは作った環境を持ち、読み込むと分かる', (
   const unknown = JSON.stringify({ format: 'auto-battler/team', version: 1, env: '__proto__', team: PRESET_TEAMS[0] });
   assert.equal(parseTeamJson(unknown).env, null);
 });
+
+test('初めて開いた環境にだけ、前の環境の保存チームをコピーする', async () => {
+  const { copyTeamsOnce } = await import('../src/storage/teamStore.js');
+  const storage = memoryStorage();
+  createTeamStore(storage, 'v1').save(2, PRESET_TEAMS[0]);
+  assert.equal(copyTeamsOnce(storage, 'v1', 'v2'), 1);
+  const v2 = createTeamStore(storage, 'v2');
+  assert.equal(v2.load()[2].name, PRESET_TEAMS[0].name);
+  // 2回目以降はコピーしない（消して空にしても戻ってこない）
+  v2.remove(2);
+  assert.equal(copyTeamsOnce(storage, 'v1', 'v2'), 0);
+  assert.equal(v2.load()[2], null);
+  // 前の環境が残っていること、前がない・同じ環境なら何もしないこと
+  assert.equal(createTeamStore(storage, 'v1').load()[2].name, PRESET_TEAMS[0].name);
+  assert.equal(copyTeamsOnce(memoryStorage(), undefined, 'v1'), 0);
+  assert.equal(copyTeamsOnce(storage, 'v1', 'v1'), 0);
+});

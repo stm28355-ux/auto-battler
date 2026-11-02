@@ -10,7 +10,10 @@ import { $, escapeHtml } from './format.js';
 //   getStats: { teams, pieces, record } … 保存チーム数・自作駒数・戦績
 //   go(view, mode): 画面を切り替える（mode は対戦タブのモード）
 //   env: いまの対戦環境（バージョン）
-export function initHome({ getTeams, getStats, go, env }) {
+//   notice: ホームに一度だけ出すお知らせ（空なら出さない）
+export function initHome({ getTeams, getStats, go, env, notice = '' }) {
+  $('home-notice').textContent = notice;
+  $('home-notice').hidden = !notice;
   let entries = getTeams();
   let index = 0;
 

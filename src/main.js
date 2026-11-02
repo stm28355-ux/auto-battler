@@ -1,7 +1,7 @@
 import { ENVIRONMENTS, applyEnvironment } from './data/environment.js';
 import { defaultStorage } from './storage/local.js';
 import { createPieceStore } from './storage/pieceStore.js';
-import { createTeamStore, listBattleTeams } from './storage/teamStore.js';
+import { copyTeamsOnce, createTeamStore, listBattleTeams, teamKey } from './storage/teamStore.js';
 import { initBattleScreen } from './ui/battleScreen.js';
 import { initDataView } from './ui/dataView.js';
 import { initHome } from './ui/home.js';
@@ -14,7 +14,12 @@ const ENV_KEY = 'auto-battler.env';
 const envStorage = defaultStorage(ENV_KEY);
 const env = applyEnvironment(envStorage.getItem(ENV_KEY));
 
-const store = createTeamStore();
+// 初めて開いた環境には、1つ前の環境の保存チームをコピーしておく（前の環境で作ったチームをすぐ使えるように）
+const teamStorage = defaultStorage(teamKey(env.id));
+const previous = ENVIRONMENTS[ENVIRONMENTS.indexOf(env) - 1];
+const copied = copyTeamsOnce(teamStorage, previous?.id, env.id);
+
+const store = createTeamStore(teamStorage);
 const pieceStore = createPieceStore();
 const battleTeams = () => listBattleTeams(store);
 
@@ -26,6 +31,7 @@ initRules({ go: (view) => go(view) });
 const home = initHome({
   getTeams: battleTeams,
   env,
+  notice: copied ? `${previous.name}の保存チーム${copied}個を、${env.name}にコピーしました（${previous.name}のチームはそのまま残っています）` : '',
   getStats: () => ({
     teams: store.load().filter(Boolean).length,
     pieces: pieceStore.load().length,
