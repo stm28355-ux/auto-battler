@@ -55,7 +55,7 @@ test('JSONの種類・バージョン違い、壊れたJSONを理由つきで拒
 
 test('数値：範囲外・文字列・無限大・小数の付与量を拒否する', () => {
   assert.match(errorsOf(chara({ hp: 99 })), /hp/);
-  assert.match(errorsOf(chara({ atk: 201 })), /atk/);
+  assert.match(errorsOf(chara({ atk: 301 })), /atk/);
   assert.match(errorsOf(chara({ spd: 0.1 })), /spd/);
   assert.match(errorsOf(chara({ hp: '300' })), /hp/);
   assert.match(errorsOf(chara({ hp: null })), /hp/);
@@ -68,7 +68,7 @@ test('数値：範囲外・文字列・無限大・小数の付与量を拒否�
 test('特殊効果：個数・数値の範囲・不明な種類・付けられない効果を拒否する', () => {
   const poison = { type: 'poison', stacks: 1, chance: 1 };
   assert.match(errorsOf(chara({ effects: [poison, poison, poison] })), /2個まで/);
-  assert.match(errorsOf(chara({ effects: [{ ...poison, stacks: 11 }] })), /1〜10/);
+  assert.match(errorsOf(chara({ effects: [{ ...poison, stacks: 31 }] })), /1〜30/);
   assert.match(errorsOf(chara({ effects: [{ ...poison, stacks: 1.5 }] })), /毒/);
   assert.match(errorsOf(chara({ effects: [{ ...poison, chance: 2 }] })), /確率/);
   assert.match(errorsOf(chara({ effects: [{ type: 'paralyze', target: 'everyone', duration: 3, chance: 1 }] })), /対象/);

@@ -92,7 +92,7 @@ test('行効果の検査とJSON', () => {
   assert.deepEqual(validatePiece(ok), []);
   for (const bad of [
     { stat: 'spd', mode: 'add', value: 1 }, { stat: 'luck', mode: 'add', value: 1 }, { stat: 'atk', mode: 'x', value: 1 },
-    { stat: 'atk', mode: 'pct', value: 5 }, { stat: 'atk', mode: 'add', value: 0 }, { stat: 'hp', mode: 'add', value: 501 },
+    { stat: 'atk', mode: 'pct', value: 5 }, { stat: 'atk', mode: 'add', value: 0 }, { stat: 'hp', mode: 'add', value: 3001 },
     { stat: 'atk', mode: 'add', value: Infinity },
   ]) assert.notDeepEqual(validatePiece(ch('u_b', { effects: [{ type: 'rowBuff', ...bad }] })), [], JSON.stringify(bad));
   const text = JSON.stringify({ format: 'auto-battler/piece', version: 1, piece: { ...ok, effects: [{ type: 'rowBuff', stat: 'def', mode: 'add', value: 10, evil: 1 }] } });

@@ -2,13 +2,31 @@ import { BUFF_MODES, BUFF_TYPES, EFFECT_TYPES, PARALYZE_TARGETS, PULSE_STATUS, S
 import { TRIBES } from '../data/tribes.js';
 import { CHARACTERS, ITEMS } from '../data/pieces.js';
 import { costBreakdown, pieceCost } from '../core/cost.js';
-import { MAX_EFFECTS, STAT_RANGES, validatePiece } from '../core/piece.js';
+import { EFFECT_MAX, MAX_EFFECTS, STAT_RANGES, validatePiece } from '../core/piece.js';
+import { BOARDS } from '../data/boards.js';
 import { MAX_NAME, MAX_JSON_CHARS, exportPieceJson, exportPiecesJson, parsePieceJson, sanitizePiece } from '../storage/pieceJson.js';
 import { newPieceId } from '../storage/pieceStore.js';
 import { $, escapeHtml, pieceSummary } from './format.js';
 
 const DIRTY_CONFIRM = '未保存の変更があります。破棄しますか？';
-const ICONS = ['🗡️', '⚔️', '🛡️', '🏹', '🪓', '🔮', '🧪', '⚡', '🔥', '❄️', '🐺', '🐻', '🐍', '🦅', '🐉', '🤖', '🛸', '🗿', '🔧', '⚙️', '👑', '💀', '🧙', '🥷', '🧝', '🧛', '💎', '🍖'];
+// アイコンの候補。標準の駒のアイコン（いまの環境）に、種族らしいものを足して、種族ごとに並べる。
+const ICON_EXTRAS = {
+  warrior: ['⚔️', '🛡️', '🏹', '🔰', '🎖️', '🏇', '🐎', '🪃', '🏰', '🦸'],
+  mage: ['🪄', '❄️', '🌙', '✨', '📜', '🕯️', '☄️', '🌀', '🔯', '🧿', '🌪️', '💫'],
+  beast: ['🦊', '🐯', '🦂', '🕷️', '🦇', '🐊', '🦈', '🦉', '🦍', '🦬', '🐘', '🦏', '🐝', '🦖'],
+  machine: ['🤖', '⚙️', '🚀', '💣', '🔩', '🛰️', '🦾', '🚁', '🛡️', '🔦', '🧲', '🚂'],
+  neutral: ['🧜', '🧚', '👻', '🧟', '😈', '🦄', '🧞', '👺', '🗿', '🥷', '🧌', '👼'],
+  item: ['🏹', '🍖', '💍', '📿', '🧿', '🗝️', '💊', '🪓', '🔨', '🪤', '🧨', '🏮', '📯', '🪬', '⏳', '🪨'],
+};
+
+function iconGroups() {
+  const uniq = (list) => [...new Set(list)];
+  const tribes = Object.entries(TRIBES).map(([id, t]) => ({
+    label: t.name,
+    icons: uniq([...CHARACTERS.filter((c) => c.tribe === id).map((c) => c.icon), ...(ICON_EXTRAS[id] ?? [])]),
+  }));
+  return [...tribes, { label: '道具', icons: uniq([...ITEMS.map((i) => i.icon), ...ICON_EXTRAS.item]) }];
+}
 
 const STAT_FIELDS = {
   character: [
@@ -31,7 +49,7 @@ const NEW_PIECE = {
 const buffFields = (target) => [
   { k: 'stat', label: '対象の値', options: STAT_NAMES },
   { k: 'mode', label: '種類', options: BUFF_MODES },
-  { k: 'value', label: `${target}に加算`, min: 1, max: (e) => (e.mode === 'pct' ? 100 : e.stat === 'hp' ? 500 : 100), step: 1, scale: (e) => (e.mode === 'pct' ? 100 : 1) },
+  { k: 'value', label: `${target}に加算`, min: 1, max: (e) => (e.mode === 'pct' ? EFFECT_MAX.buffPct * 100 : e.stat === 'hp' ? EFFECT_MAX.buffAddHp : EFFECT_MAX.buffAdd), step: 1, scale: (e) => (e.mode === 'pct' ? 100 : 1) },
 ];
 const buff = (type, stat, mode, value) => () => ({ type, stat, mode, value });
 
@@ -43,7 +61,7 @@ const EFFECTS = {
     hint: '攻撃時（道具なら隣のキャラの攻撃に付く）',
     make: () => ({ type: 'poison', stacks: 1, chance: 1 }),
     fields: [
-      { k: 'stacks', label: '付与量', min: 1, max: 10, step: 1 },
+      { k: 'stacks', label: '付与量', min: 1, max: EFFECT_MAX.stacks, step: 1 },
       { k: 'chance', label: '確率(%)', min: 0, max: 100, step: 1, scale: 100 },
     ],
   },
@@ -62,7 +80,7 @@ const EFFECTS = {
     hint: '攻撃時（道具なら隣のキャラの攻撃に付く）',
     make: () => ({ type: 'curse', duration: 3, chance: 0.5 }),
     fields: [
-      { k: 'duration', label: '秒数', min: 0.5, max: 10, step: 0.5 },
+      { k: 'duration', label: '秒数', min: 0.5, max: EFFECT_MAX.seconds, step: 0.5 },
       { k: 'chance', label: '確率(%)', min: 0, max: 100, step: 1, scale: 100 },
     ],
   },
@@ -90,7 +108,7 @@ const EFFECTS = {
     make: () => ({ type: 'pulse', status: 'poison', amount: 1, interval: 2 }),
     fields: [
       { k: 'status', label: '状態異常', options: PULSE_STATUS },
-      { k: 'amount', label: (e) => (e.status === 'curse' ? '秒数' : '付与量'), min: (e) => (e.status === 'curse' ? 0.5 : 1), max: 10, step: (e) => (e.status === 'curse' ? 0.5 : 1) },
+      { k: 'amount', label: (e) => (e.status === 'curse' ? '秒数' : '付与量'), min: (e) => (e.status === 'curse' ? 0.5 : 1), max: (e) => (e.status === 'curse' ? EFFECT_MAX.seconds : EFFECT_MAX.stacks), step: (e) => (e.status === 'curse' ? 0.5 : 1) },
       { k: 'interval', label: '間隔(秒)', min: 0.5, max: 30, step: 0.5 },
     ],
   },
@@ -189,7 +207,9 @@ export function initPieceEditor({ store }) {
           <label>アイコン <input type="text" data-f="icon" class="icon-input" value="${escapeHtml(form.icon)}"></label>
           ${tribe}
         </div>
-        <div class="icon-pick">${ICONS.map((ic) => `<button type="button" data-icon="${escapeHtml(ic)}">${escapeHtml(ic)}</button>`).join('')}</div>
+        <div class="icon-pick">${iconGroups().map((g) => `<div class="icon-group"><span class="muted icon-group-label">${escapeHtml(g.label)}</span>`
+          + g.icons.map((ic) => `<button type="button" data-icon="${escapeHtml(ic)}"${ic === form.icon ? ' class="selected"' : ''}>${escapeHtml(ic)}</button>`).join('')
+          + '</div>').join('')}</div>
         <h4>ステータス</h4>
         ${STAT_FIELDS[form.kind].map(statRow).join('')}
         <h4>特殊効果 <span class="muted">（${MAX_EFFECTS}個まで）</span></h4>
@@ -225,7 +245,12 @@ export function initPieceEditor({ store }) {
       return;
     }
     const b = costBreakdown(form);
-    $('piece-cost').innerHTML = `<h4>コスト</h4><p class="cost-total">${b.total}</p>`
+    // どのボードに置けるか（コスト上限を超える駒は、そのボードには置けない）
+    const fits = Object.values(BOARDS).filter((bd) => b.total <= bd.costCap).map((bd) => bd.name);
+    const fitNote = fits.length === Object.keys(BOARDS).length ? ''
+      : fits.length ? `<p class="muted">${fits.join('・')}にだけ置けます（ほかのボードのコスト上限を超えています）</p>`
+        : '<p class="message message--error">コストが高すぎて、どのボードにも置けません</p>';
+    $('piece-cost').innerHTML = `<h4>コスト</h4><p class="cost-total">${b.total}</p>${fitNote}`
       + `<table class="breakdown">${b.parts.map((p) => `<tr><td>${escapeHtml(p.label)}</td><td>${p.value.toFixed(2)}</td></tr>`).join('')}`
       + `<tr><td>実力の合計</td><td>${b.raw.toFixed(2)}</td></tr>`
       + `<tr><td>コスト（高い駒ほど割高）</td><td>${b.total}</td></tr></table>`;
