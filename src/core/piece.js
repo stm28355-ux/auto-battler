@@ -11,8 +11,11 @@ export const MAX_EFFECTS = 2;
 
 const inRange = (v, [min, max]) => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
 
+// '__proto__' や 'constructor' のような名前を、辞書のキーとして通さない。
+const has = (dict, key) => typeof key === 'string' && Object.hasOwn(dict, key);
+
 function validateEffect(e, kind) {
-  const type = EFFECT_TYPES[e?.type];
+  const type = has(EFFECT_TYPES, e?.type) ? EFFECT_TYPES[e.type] : null;
   if (!type) return `不明な効果です（${e?.type}）`;
   if (!type.on.includes(kind)) return `${type.name}はこの駒に付けられません`;
   switch (e.type) {
@@ -21,7 +24,7 @@ function validateEffect(e, kind) {
       if (!inRange(e.chance, [0, 1])) return '毒の確率は0〜1にしてください';
       break;
     case 'paralyze':
-      if (!PARALYZE_TARGETS[e.target]) return `麻痺の対象が不正です（${e.target}）`;
+      if (!has(PARALYZE_TARGETS, e.target)) return `麻痺の対象が不正です（${e.target}）`;
       if (!inRange(e.duration, [0.1, 30])) return '麻痺の秒数は0.1〜30にしてください';
       if (!inRange(e.chance, [0, 1])) return '麻痺の確率は0〜1にしてください';
       break;
@@ -39,14 +42,14 @@ function validateEffect(e, kind) {
 // エラーメッセージの配列を返す。空なら正しい駒。
 export function validatePiece(piece) {
   const errors = [];
-  const ranges = STAT_RANGES[piece?.kind];
+  const ranges = has(STAT_RANGES, piece?.kind) ? STAT_RANGES[piece.kind] : null;
   if (!ranges) return [`駒の種類が不正です（${piece?.kind}）`];
   if (typeof piece.id !== 'string' || !piece.id) errors.push('IDがありません');
   if (typeof piece.name !== 'string' || !piece.name) errors.push('名前がありません');
   for (const [stat, range] of Object.entries(ranges)) {
     if (!inRange(piece[stat], range)) errors.push(`${stat} は ${range[0]}〜${range[1]} にしてください`);
   }
-  if (piece.kind === 'character' && !TRIBES[piece.tribe]) errors.push(`種族が不正です（${piece.tribe}）`);
+  if (piece.kind === 'character' && !has(TRIBES, piece.tribe)) errors.push(`種族が不正です（${piece.tribe}）`);
   const effects = piece.effects ?? [];
   if (!Array.isArray(effects) || effects.length > MAX_EFFECTS) errors.push(`特殊効果は${MAX_EFFECTS}個までです`);
   else for (const e of effects) {

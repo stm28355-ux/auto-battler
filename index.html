@@ -11,6 +11,7 @@
     <h1>Auto Battler</h1>
     <nav class="tabs">
       <button class="tab" type="button" data-view="battle" aria-selected="true">対戦</button>
+      <button class="tab" type="button" data-view="team" aria-selected="false">チーム編成</button>
       <button class="tab" type="button" data-view="data" aria-selected="false">データ一覧</button>
     </nav>
   </header>
@@ -71,6 +72,61 @@
         <div id="result" class="panel result" hidden></div>
         <ol id="log" class="log panel"></ol>
       </section>
+    </div>
+
+    <div id="view-team" hidden>
+      <div class="editor-grid">
+        <aside class="editor-side">
+          <section class="panel">
+            <h3>保存スロット</h3>
+            <div id="slot-list" class="slot-list"></div>
+            <div class="buttons buttons--wrap">
+              <button id="team-new" type="button">新規</button>
+              <button id="team-save" type="button" class="primary">選択中のスロットに保存</button>
+              <button id="team-delete" type="button">削除</button>
+            </div>
+          </section>
+          <section class="panel">
+            <h3>JSON</h3>
+            <div class="buttons buttons--wrap">
+              <button id="json-download" type="button">ファイルに書き出す</button>
+              <button id="json-copy" type="button">コピー</button>
+              <button id="json-open" type="button">ファイルを読み込む</button>
+              <button id="json-paste-toggle" type="button">貼り付けて読み込む</button>
+            </div>
+            <input id="json-file" type="file" accept=".json,application/json" hidden>
+            <div id="json-paste" hidden>
+              <textarea id="json-text" rows="6" spellcheck="false" placeholder="チームのJSONを貼り付け"></textarea>
+              <button id="json-apply" type="button">読み込む</button>
+            </div>
+          </section>
+          <div id="team-message" class="message"></div>
+        </aside>
+
+        <section class="editor-main">
+          <div class="panel editor-head">
+            <label>チーム名 <input id="team-name" type="text" maxlength="30"></label>
+            <label>ボード <select id="team-board"></select></label>
+            <span id="team-dirty" class="dirty" hidden>● 未保存</span>
+            <div class="cost">
+              <span id="cost-text"></span>
+              <progress id="cost-bar" max="1" value="0"></progress>
+            </div>
+          </div>
+          <div class="editor-body">
+            <div>
+              <div id="edit-board" class="board-wrap"></div>
+              <p class="muted board-note">左が前（列1）。駒を選んでマスをクリックで配置、右クリックで外す</p>
+            </div>
+            <aside id="edit-info" class="panel"></aside>
+          </div>
+          <div id="edit-hover" class="panel hover-info"></div>
+          <h3>駒</h3>
+          <div id="palette" class="panel"></div>
+          <h3>遺物 <span id="relic-count" class="muted"></span></h3>
+          <div id="relic-picker" class="relic-picker"></div>
+        </section>
+      </div>
     </div>
 
     <div id="view-data" hidden>

@@ -1,6 +1,5 @@
 import { BOARDS, posKey } from '../data/boards.js';
 import { describeEffect } from '../data/effects.js';
-import { PRESET_TEAMS } from '../data/presetTeams.js';
 import { createCatalog } from '../core/catalog.js';
 import { validateTeam } from '../core/team.js';
 import { createBattle, DT, MAX_STEPS } from '../engine/battle.js';
@@ -40,13 +39,24 @@ function floater(svg, cell, text, cls) {
 }
 
 // 「対戦」タブ：2チームを選び、戦闘エンジンの進行をそのまま再生する。
-export function initBattleScreen({ getTeams = () => PRESET_TEAMS } = {}) {
-  const teams = getTeams();
+//   getTeams: 選べるチームの一覧 [{ id, label, team }] を返す（保存チームが増減するたびに呼び直す）
+export function initBattleScreen({ getTeams }) {
+  let entries = getTeams();
   let game = null;
 
-  const option = (t, i) => `<option value="${i}">${escapeHtml(t.name)}（${BOARDS[t.board].name}）</option>`;
-  for (const key of SIDES) $(`team-${key}`).innerHTML = teams.map(option).join('');
-  $('team-b').value = String(Math.min(1, teams.length - 1));
+  const entryOf = (key) => entries.find((e) => e.id === $(`team-${key}`).value);
+
+  // 選択を保ったまま、選択肢を作り直す。消えたチームを選んでいたら先頭に戻す。
+  function fillSelects() {
+    const previous = Object.fromEntries(SIDES.map((k) => [k, $(`team-${k}`).value]));
+    const defaults = { a: entries[0].id, b: entries[Math.min(1, entries.length - 1)].id };
+    for (const key of SIDES) {
+      const select = $(`team-${key}`);
+      select.innerHTML = entries.map((e) => `<option value="${escapeHtml(e.id)}">${escapeHtml(e.label)}</option>`).join('');
+      select.value = entries.some((e) => e.id === previous[key]) ? previous[key] : defaults[key];
+    }
+  }
+  fillSelects();
 
   const speed = () => Number($('speed').value);
   const seed = () => {
@@ -72,7 +82,7 @@ export function initBattleScreen({ getTeams = () => PRESET_TEAMS } = {}) {
   function prepare() {
     stop();
     game = null;
-    const picked = { a: teams[$('team-a').value], b: teams[$('team-b').value] };
+    const picked = { a: entryOf('a').team, b: entryOf('b').team };
     const catalog = createCatalog(SIDES.flatMap((k) => picked[k].customPieces ?? []));
     const errors = SIDES.flatMap((k) => validateTeam(picked[k], catalog).map((e) => `チーム${k.toUpperCase()}: ${e}`));
     $('setup-errors').innerHTML = errors.map((e) => `<li>${escapeHtml(e)}</li>`).join('');
@@ -259,4 +269,15 @@ export function initBattleScreen({ getTeams = () => PRESET_TEAMS } = {}) {
   for (const id of ['team-a', 'team-b', 'seed']) $(id).addEventListener('change', prepare);
 
   prepare();
+
+  return {
+    // 「チーム編成」で保存したチームを選択肢に反映する。再生中は触らない。
+    refreshTeams() {
+      if (game?.running && !game.battle.state.done) return;
+      entries = getTeams();
+      fillSelects();
+      const same = game && SIDES.every((k) => JSON.stringify(game.teams[k]) === JSON.stringify(entryOf(k).team));
+      if (!same) prepare();
+    },
+  };
 }

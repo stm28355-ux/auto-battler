@@ -12,9 +12,10 @@ function svgEl(tag, attrs = {}) {
 }
 
 // 盤面をSVGで描く。マスにマウスを乗せると隣接マスをハイライトし、onHover を呼ぶ。
-export function renderBoard(board, { team = null, catalog = null, mirror = false, onHover = null } = {}) {
+// onClick / onContext を渡すと、マスをクリック（右クリック）できる盤面になる（チーム編成用）。
+export function renderBoard(board, { team = null, catalog = null, mirror = false, onHover = null, onClick = null, onContext = null } = {}) {
   const layout = boardLayout(board, { mirror });
-  const svg = svgEl('svg', { viewBox: layout.viewBox.join(' '), class: 'board' });
+  const svg = svgEl('svg', { viewBox: layout.viewBox.join(' '), class: onClick ? 'board board--editable' : 'board' });
   const occupants = new Map((team?.slots ?? []).map((s) => [posKey(s.pos), catalog.piece(s.pieceId)]));
   const fronts = new Set(team ? [...frontLiners(team, catalog).values()].map(posKey) : []);
   const groups = new Map();
@@ -43,6 +44,14 @@ export function renderBoard(board, { team = null, catalog = null, mirror = false
       for (const n of neighbors(board.id, cell.pos)) groups.get(posKey(n))?.classList.remove('cell--adj');
       onHover?.(null, null);
     });
+
+    if (onClick) g.addEventListener('click', () => onClick(cell.pos));
+    if (onContext) {
+      g.addEventListener('contextmenu', (ev) => {
+        ev.preventDefault();
+        onContext(cell.pos);
+      });
+    }
 
     groups.set(key, g);
     svg.append(g);
