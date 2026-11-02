@@ -24,7 +24,7 @@ GitHub Pages で公開中: https://stm28355-ux.github.io/auto-battler/
 | `src/core/` | コスト計算・チーム検証・前線判定など（DOMに依存しない） |
 | `src/engine/` | 戦闘エンジン（`runBattle` / `createBattle`。DOMに依存しない） |
 | `src/storage/` | チーム・自作駒の保存（localStorage）とJSON入出力・検証（手編集したJSONも想定して厳しく検査する） |
-| `src/ui/` | 画面（`home.js` ホーム、`pieceEditor.js` 駒作成タブ、`teamEditor.js` チーム編成タブ、`battleScreen.js` 対戦タブ、`dataView.js` 図鑑（データ一覧）タブ、`boardView.js` 盤面SVG） |
+| `src/ui/` | 画面（`home.js` ホーム、`rules.js` ルール、`pieceEditor.js` 駒作成タブ、`teamEditor.js` チーム編成タブ、`battleScreen.js` 対戦タブ、`dataView.js` 図鑑（データ一覧）タブ、`boardView.js` 盤面SVG） |
 | `test/` | テスト（`node --test`） |
 | `tools/` | 開発用スクリプト（`serve.mjs` 開発サーバー、`balance.js` バランス調整ツール） |
 

@@ -4,6 +4,7 @@ import { initBattleScreen } from './ui/battleScreen.js';
 import { initDataView } from './ui/dataView.js';
 import { initHome } from './ui/home.js';
 import { initPieceEditor } from './ui/pieceEditor.js';
+import { initRules } from './ui/rules.js';
 import { initTeamEditor } from './ui/teamEditor.js';
 
 const store = createTeamStore();
@@ -14,6 +15,7 @@ const battle = initBattleScreen({ getTeams: battleTeams });
 const teamEditor = initTeamEditor({ store, pieceStore });
 const pieceEditor = initPieceEditor({ store: pieceStore });
 initDataView();
+initRules({ go: (view) => go(view) });
 const home = initHome({
   getTeams: battleTeams,
   getStats: () => ({
@@ -24,7 +26,7 @@ const home = initHome({
   go: (view, mode) => go(view, mode),
 });
 
-const TITLES = { home: '', battle: '対戦', team: 'チーム編成', piece: '駒作成', data: '図鑑' };
+const TITLES = { home: '', battle: '対戦', team: 'チーム編成', piece: '駒作成', data: '図鑑', rules: 'ルール' };
 const tabs = [...document.querySelectorAll('.tab')];
 const onShow = {
   home: () => home.refresh(), // 保存したチーム・戦績を反映

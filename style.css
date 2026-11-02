@@ -595,3 +595,26 @@ textarea {
 @media (max-width: 900px) {
   .editor-body--team { grid-template-columns: 1fr; }
 }
+
+/* ---- ルール ---- */
+.help-btn { margin-left: auto; padding: 4px 12px; border-radius: 999px; font-size: 0.85rem; }
+body[data-view="rules"] .help-btn { border-color: #6d6235; color: var(--accent); }
+.home-sub { grid-template-columns: repeat(2, 1fr); }
+.rules { display: grid; gap: 14px; margin-top: 16px; max-width: 860px; margin-inline: auto; }
+.rule-card { background: var(--panel); border-radius: 12px; padding: 14px 20px; border-left: 4px solid var(--accent); }
+.rule-card h2 { margin: 0 0 8px; font-size: 1.1rem; }
+.rule-card h3 { margin: 14px 0 4px; font-size: 0.95rem; }
+.rule-card p { margin: 6px 0; }
+.rule-steps, .rule-list { margin: 4px 0; padding-left: 1.4em; display: grid; gap: 4px; }
+.rule-dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 4px 0; }
+.rule-dl dt { font-weight: bold; color: var(--accent); }
+.rule-dl dd { margin: 0; }
+.rule-boards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 8px 0; }
+.rule-board { margin: 0; text-align: center; font-size: 0.85rem; }
+.rule-board .board { max-height: 160px; }
+.rule-tribes { line-height: 2; }
+.link-btn { padding: 2px 10px; border-radius: 999px; font-size: 0.85rem; }
+@media (max-width: 520px) {
+  .rule-dl { grid-template-columns: 1fr; }
+  .help-btn { padding: 4px 8px; }
+}

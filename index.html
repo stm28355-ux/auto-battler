@@ -10,6 +10,7 @@
   <header class="topbar">
     <button class="logo" type="button" data-view-link="home" title="ホームへ">⚔ Auto Battler</button>
     <h1 id="view-title" class="view-title"></h1>
+    <button class="help-btn" type="button" data-view-link="rules" title="ルールを見る">❔ ルール</button>
   </header>
 
   <nav class="bottom-nav" aria-label="メニュー">
@@ -54,6 +55,7 @@
             <button type="button" class="sub-btn" data-go="team">🧩 編成</button>
             <button type="button" class="sub-btn" data-go="piece">🛠️ 駒作成</button>
             <button type="button" class="sub-btn" data-go="data">📖 図鑑</button>
+            <button type="button" class="sub-btn" data-go="rules">📘 ルール</button>
           </div>
         </div>
       </section>
@@ -223,6 +225,10 @@
 
         <section id="piece-form" class="editor-main"></section>
       </div>
+    </div>
+
+    <div id="view-rules" hidden>
+      <div id="rules-body" class="rules"></div>
     </div>
 
     <div id="view-data" hidden>
