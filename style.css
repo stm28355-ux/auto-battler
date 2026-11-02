@@ -585,13 +585,20 @@ textarea {
 .mode-switch label:has(input:focus-visible) { outline: 2px solid var(--accent); }
 
 /* ---- 編成：盤面の横に駒の一覧 ---- */
-.editor-body--team { grid-template-columns: minmax(0, 1fr) minmax(300px, 420px); }
-.palette-panel h3 { margin-top: 0 !important; }
-.palette-panel #palette { max-height: 520px; overflow-y: auto; }
+/* 横に広い画面では「盤面 ｜ 駒 ｜ チームの詳細」を並べ、配置しながら詳細を見られるようにする */
+body[data-view="team"] main { max-width: 1840px; }
+#view-team .editor-grid { grid-template-columns: 240px minmax(0, 1fr); }
+.editor-body--team { grid-template-columns: minmax(300px, 1fr) minmax(300px, 400px) minmax(300px, 400px); }
+.palette-panel h3, .detail-panel h3 { margin-top: 0 !important; }
+.palette-panel #palette, .detail-panel #edit-info { max-height: 560px; overflow-y: auto; }
 .palette-panel .palette-row { align-items: flex-start; }
 .palette-panel .palette-label { width: 100%; flex-direction: row; align-items: center; gap: 6px; margin-top: 4px; }
-.team-detail { columns: 2 280px; column-gap: 24px; }
 .team-detail > * { break-inside: avoid; }
+@media (max-width: 1500px) {
+  .editor-body--team { grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); }
+  .detail-panel { grid-column: 1 / -1; }
+  .detail-panel #edit-info { max-height: none; columns: 2 280px; column-gap: 24px; }
+}
 @media (max-width: 900px) {
   .editor-body--team { grid-template-columns: 1fr; }
 }

@@ -142,7 +142,7 @@ export function initTeamEditor({ store, pieceStore }) {
     const picked = tool && tool !== ERASER ? cat.piece(tool) : null;
     $('tool-note').innerHTML = tool === ERASER ? '🧹 <strong>消す</strong>：マスをクリックすると駒を外します'
       : picked ? `選択中：<strong>${escapeHtml(picked.icon)} ${escapeHtml(picked.name)}</strong>（コスト${pieceCost(picked)}）→ マスをクリックで配置`
-        : '<span class="muted">下の「駒」から選んで、マスをクリックで配置</span>';
+        : '<span class="muted">「駒」の一覧から選んで、マスをクリックで配置</span>';
     $('tool-note').classList.toggle('tool-note--active', !!tool);
     const stale = outdated();
     const note = stale.length
