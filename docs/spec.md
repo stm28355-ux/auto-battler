@@ -60,6 +60,7 @@
 | 特殊効果 | 0〜2個 |
 
 道具自身は攻撃しない。前線にもならない。
+道具の「攻撃時」効果（毒・麻痺）は、隣接するキャラクターの攻撃に付与される。
 
 ### 遺物
 
@@ -87,7 +88,8 @@
 | 麻痺 `paralyze` | 攻撃が当たったとき | `target`、`duration`(3s)、`chance` | 対象の攻撃速度を半減する。重ねがけで持続時間が延長される |
 | 隣接攻撃倍率 `adjAtkMult` | 常時 | `mult`（例 0.2） | 隣接キャラクターの攻撃倍率を +mult |
 | 回復 `heal` | 一定間隔 | `amount`、`interval` | 自チームHPを回復（最大HPを超えない） |
-| ステータス強化 `statBuff` | 常時 | `stat`、`value`、`scope` | 遺物向け。チーム全体・種族限定などのステータス加算 |
+| ステータス強化 `statBuff` | 常時 | `stat`、`value`、`mode`、`scope`、`tribe`（任意） | 遺物・種族ボーナス向け。`mode` は `add`（加算）か `pct`（割合）。`tribe` を指定するとその種族だけに効く |
+| 毒付与量 `poisonBonus` | 常時 | `value` | 種族ボーナス専用。毒の付与量に加算 |
 
 **麻痺の `target`**（効果ごとに選ぶ）
 - `front`：攻撃した相手の前線
@@ -166,7 +168,7 @@
 ```json
 // 駒
 { "format": "auto-battler/piece", "version": 1,
-  "piece": { "id": "u_xxx", "kind": "character", "name": "見習い剣士",
+  "piece": { "id": "u_xxx", "kind": "character", "name": "見習い剣士", "icon": "🗡️",
     "hp": 300, "atk": 40, "def": 30, "spd": 1.0, "tribe": "warrior",
     "effects": [ { "type": "poison", "stacks": 1, "chance": 0.5 } ],
     "sprite": null } }

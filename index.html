@@ -7,10 +7,36 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main>
+  <header class="site-header">
     <h1>Auto Battler</h1>
-    <canvas id="game" width="800" height="450"></canvas>
+    <span class="badge">Phase 1: 盤面ビューア</span>
+  </header>
+
+  <main>
+    <section class="viewer">
+      <div class="viewer-controls">
+        <label>チーム
+          <select id="team-select"></select>
+        </label>
+        <label class="check"><input type="checkbox" id="mirror"> 左右反転</label>
+      </div>
+      <div class="viewer-body">
+        <div id="board-wrap" class="board-wrap"></div>
+        <aside id="team-info" class="panel"></aside>
+      </div>
+      <div id="hover-info" class="panel hover-info">マスにマウスを乗せると、隣接マスと駒の詳細を表示します。</div>
+    </section>
+
+    <section>
+      <h2>キャラクター</h2>
+      <div class="table-wrap"><table id="character-table"></table></div>
+      <h2>道具</h2>
+      <div class="table-wrap"><table id="item-table"></table></div>
+      <h2>遺物</h2>
+      <div class="table-wrap"><table id="relic-table"></table></div>
+    </section>
   </main>
-  <script src="main.js"></script>
+
+  <script type="module" src="src/main.js"></script>
 </body>
 </html>
