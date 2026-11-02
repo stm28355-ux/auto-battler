@@ -13,7 +13,10 @@ export const MAX_JSON_CHARS = 1_000_000;
 export const ID_PATTERN = /^(?!__)[A-Za-z0-9_-]{1,64}$/; // `__proto__` のような名前は使えない
 
 // 標準の駒のID。自作駒はこれと重ならないIDにする。
-export const BUILTIN_IDS = new Set([...CHARACTERS, ...ITEMS].map((p) => p.id));
+// 環境（src/data/environment.js）を切り替えると標準の駒も変わるので、その都度いまの一覧を見る。
+export const BUILTIN_IDS = {
+  has: (id) => CHARACTERS.some((p) => p.id === id) || ITEMS.some((p) => p.id === id),
+};
 
 const PIECE_FIELDS = {
   character: ['id', 'kind', 'name', 'icon', 'tribe', 'hp', 'atk', 'def', 'spd', 'effects'],

@@ -1,4 +1,5 @@
 import { BOARDS, isCell, posKey } from '../data/boards.js';
+import { activeEnvironment, findEnvironment } from '../data/environment.js';
 import { BUILTIN_IDS, MAX_JSON_CHARS, MAX_NAME, PIECE_FORMAT, PIECES_FORMAT, isId, sanitizePiece } from './pieceJson.js';
 
 export { BUILTIN_IDS, MAX_JSON_CHARS, MAX_NAME };
@@ -92,11 +93,13 @@ export function normalizeTeam(team) {
   };
 }
 
-export function exportTeamJson(team) {
-  return JSON.stringify({ format: TEAM_FORMAT, version: TEAM_VERSION, team: normalizeTeam(team) }, null, 2);
+// env は作った環境（バージョン）のID。読み込むときの案内に使う（違う環境でも読み込める）。
+export function exportTeamJson(team, envId = activeEnvironment().id) {
+  return JSON.stringify({ format: TEAM_FORMAT, version: TEAM_VERSION, env: envId, team: normalizeTeam(team) }, null, 2);
 }
 
-// { team, errors }。errors があれば team は null（理由を画面に出して拒否する）。
+// { team, errors, env }。errors があれば team は null（理由を画面に出して拒否する）。
+// env は書き出した環境のID（知らない値や、環境を分ける前のJSONなら null）。
 export function parseTeamJson(text) {
   if (typeof text !== 'string' || !text.trim()) return { team: null, errors: ['JSONが空です'] };
   if (text.length > MAX_JSON_CHARS) return { team: null, errors: ['JSONが大きすぎます'] };
@@ -111,5 +114,6 @@ export function parseTeamJson(text) {
   }
   if (!isObj(data) || data.format !== TEAM_FORMAT) return { team: null, errors: ['チームのJSONではありません'] };
   if (data.version !== TEAM_VERSION) return { team: null, errors: [`未対応のバージョンです（${String(data.version)}）`] };
-  return sanitizeTeam(data.team);
+  const env = typeof data.env === 'string' && findEnvironment(data.env) ? data.env : null;
+  return { ...sanitizeTeam(data.team), env };
 }

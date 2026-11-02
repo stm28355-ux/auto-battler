@@ -8,9 +8,11 @@
 //   node tools/balance.js --brief 1          要点だけを1行で出す
 //   node tools/balance.js --set damageScale=0.6 --set cost.def=40
 //                                            src/data/balance.js の値を一時的に変えて試す（何回でも指定できる）
+//   node tools/balance.js --env v1           過去の環境（バージョン）で測る（省略すると最新の環境）
 import { pathToFileURL } from 'node:url';
 import { setBalance } from '../src/data/balance.js';
 import { BOARDS } from '../src/data/boards.js';
+import { applyEnvironment, findEnvironment } from '../src/data/environment.js';
 import { PRESET_TEAMS } from '../src/data/presetTeams.js';
 import { RELICS } from '../src/data/relics.js';
 import { TRIBES } from '../src/data/tribes.js';
@@ -182,12 +184,19 @@ function parseSet(text) {
 
 function parseArgs(argv) {
   const args = { matches: undefined, seed: 1, mode: 'random', top: 12 };
+  // 環境は --set より先に切り替える（切り替えるとバランス値も入れ替わるため）
+  const envAt = argv.indexOf('--env');
+  if (envAt >= 0) {
+    if (!findEnvironment(argv[envAt + 1])) throw new Error(`知らない環境です: ${argv[envAt + 1]}`);
+    applyEnvironment(argv[envAt + 1]);
+  }
   for (let i = 0; i < argv.length; i += 2) {
     const key = argv[i].replace(/^--/, '');
     const value = argv[i + 1];
     if (key === 'mode') args.mode = value;
     else if (['matches', 'seed', 'top'].includes(key)) args[key] = Number(value);
     else if (key === 'brief') args.brief = value !== '0';
+    else if (key === 'env') continue; // 上で切り替え済み
     else if (key === 'set') setBalance(...parseSet(value)); // --set damageScale=0.6 のように、設定を一時的に変えて試す
     else throw new Error(`知らないオプションです: ${argv[i]}`);
   }

@@ -628,3 +628,17 @@ body[data-view="rules"] .help-btn { border-color: #6d6235; color: var(--accent);
 .rule-range td.need { color: #f2c14e; }
 .rule-range td.row { color: #8fd3ff; }
 .rule-range td.any { color: #7bd88f; }
+
+/* ---- 環境の切り替え ---- */
+.env-pick { margin-left: auto; display: flex; align-items: center; gap: 2px; font-size: 0.85rem; color: var(--muted); }
+.env-pick select { margin-left: 4px; }
+.env-pick + .help-btn { margin-left: 8px; }
+@media (max-width: 520px) {
+  .view-title { display: none; }
+}
+.logo, .help-btn { white-space: nowrap; }
+@media (max-width: 520px) {
+  .topbar { gap: 8px; padding: 8px; }
+  .logo { padding: 4px; font-size: 1rem; }
+  .env-label, .help-label { display: none; }
+}

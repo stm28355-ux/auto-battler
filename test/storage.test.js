@@ -109,11 +109,11 @@ test('保存スロット：保存・読み込み・削除', () => {
 test('保存データが壊れていても落ちない。壊れたスロットだけ空になる', () => {
   const storage = memoryStorage();
   storage.setItem('auto-battler.teams.v1', '{oops');
-  assert.ok(createTeamStore(storage).load().every((t) => t === null));
+  assert.ok(createTeamStore(storage, 'v1').load().every((t) => t === null));
 
   const good = normalizeTeam(PRESET_TEAMS[0]);
   storage.setItem('auto-battler.teams.v1', JSON.stringify([good, { name: 'x', board: 'nope' }, 5, null]));
-  const slots = createTeamStore(storage).load();
+  const slots = createTeamStore(storage, 'v1').load();
   assert.equal(slots[0].name, good.name);
   assert.deepEqual(slots.slice(1), Array(SLOT_COUNT - 1).fill(null));
 });

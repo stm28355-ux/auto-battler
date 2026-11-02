@@ -1,15 +1,20 @@
 import { BOARDS } from '../data/boards.js';
+import { activeEnvironment } from '../data/environment.js';
 import { PRESET_TEAMS, TIERS } from '../data/presetTeams.js';
 import { defaultStorage, memoryStorage } from './local.js';
 import { normalizeTeam, sanitizeTeam } from './teamJson.js';
 
 export const SLOT_COUNT = 9;
-const KEY = 'auto-battler.teams.v1';
+const LEGACY_KEY = 'auto-battler.teams.v1'; // 環境を分ける前からの保存先。Ver.1 の環境で使う
+
+// 保存チームは環境（バージョン）ごとに別の場所に置く。
+export const teamKey = (envId) => (envId === 'v1' ? LEGACY_KEY : `auto-battler.teams.v1@${envId}`);
 
 export { memoryStorage };
 
 // 保存スロットが SLOT_COUNT 個あるチーム保存庫。壊れたデータは空きスロットとして扱う。
-export function createTeamStore(storage = defaultStorage(KEY)) {
+export function createTeamStore(storage = defaultStorage(LEGACY_KEY), envId = activeEnvironment().id) {
+  const KEY = teamKey(envId);
   const read = () => {
     let raw = [];
     try {

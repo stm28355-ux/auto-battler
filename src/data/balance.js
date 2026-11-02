@@ -63,7 +63,12 @@ export const BALANCE = {
 };
 
 const clone = (obj) => structuredClone(obj);
-const TUNED = clone(BALANCE);
+let TUNED = clone(BALANCE);
+
+// useBalance() で戻す先の値を変える（環境を切り替えたとき。src/data/environment.js）
+export function setTunedBalance(values) {
+  TUNED = clone(values);
+}
 
 // 値を一時的に差し替える（ツールやテスト用）。path は 'cost.def' のようにドットで指す。
 export function setBalance(path, value) {

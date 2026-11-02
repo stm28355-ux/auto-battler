@@ -1,4 +1,5 @@
 import { BOARDS, isCell, posKey } from '../data/boards.js';
+import { activeEnvironment, findEnvironment } from '../data/environment.js';
 import { RELICS } from '../data/relics.js';
 import { createCatalog } from '../core/catalog.js';
 import { pieceCost } from '../core/cost.js';
@@ -291,13 +292,18 @@ export function initTeamEditor({ store, pieceStore }) {
   });
 
   function importText(text) {
-    const { team, errors } = parseTeamJson(text);
+    const { team, errors, env } = parseTeamJson(text);
     if (errors.length) {
       setMessage('error', ['読み込めませんでした', ...errors]);
       return;
     }
     if (!confirmDiscard()) return;
-    loadDraft(team, { message: ['ok', `「${team.name}」を読み込みました。保存するにはスロットを選んで「保存」を押してください`] });
+    const current = activeEnvironment();
+    const other = env && env !== current.id ? findEnvironment(env) : null;
+    loadDraft(team, { message: ['ok', [
+      `「${team.name}」を読み込みました。保存するにはスロットを選んで「保存」を押してください`,
+      ...(other ? [`このチームは${other.name}で作られたものです。今の環境（${current.name}）のルール・コストで扱います`] : []),
+    ]] });
   }
 
   $('json-file').addEventListener('change', async (ev) => {
@@ -324,6 +330,7 @@ export function initTeamEditor({ store, pieceStore }) {
   setMessage('info', '');
 
   return {
+    isDirty: dirty,
     // 他のタブから戻ったときに、自作駒を読み直す
     refresh() {
       myPieces = pieceStore.load();

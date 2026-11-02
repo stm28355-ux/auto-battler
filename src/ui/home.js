@@ -9,7 +9,8 @@ import { $, escapeHtml } from './format.js';
 //   getTeams: 対戦で選べるチームの一覧 [{ id, label, team }]（保存したチームが先、プリセットが後）
 //   getStats: { teams, pieces, record } … 保存チーム数・自作駒数・戦績
 //   go(view, mode): 画面を切り替える（mode は対戦タブのモード）
-export function initHome({ getTeams, getStats, go }) {
+//   env: いまの対戦環境（バージョン）
+export function initHome({ getTeams, getStats, go, env }) {
   let entries = getTeams();
   let index = 0;
 
@@ -31,6 +32,7 @@ export function initHome({ getTeams, getStats, go }) {
     const { teams, pieces, record } = getStats();
     const rec = record.total ? `${record.win}勝 ${record.loss}敗 ${record.draw}分` : 'まだ対戦していません';
     $('home-stats').innerHTML = `
+      <div><span class="muted">対戦環境</span><strong>${escapeHtml(env.name)}（${escapeHtml(env.status)}）</strong></div>
       <div><span class="muted">保存したチーム</span><strong>${teams} / 9</strong></div>
       <div><span class="muted">自作の駒</span><strong>${pieces}</strong></div>
       <div><span class="muted">ランダムマッチ戦績</span><strong>${rec}</strong></div>`;

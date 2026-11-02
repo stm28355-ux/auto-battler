@@ -430,6 +430,7 @@ export function initPieceEditor({ store }) {
 
   renderAll();
   return {
+    isDirty: dirty,
     // 他のタブから戻ったときに、保存庫の内容を読み直す
     refresh() {
       saved = store.load();

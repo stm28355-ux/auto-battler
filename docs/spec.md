@@ -364,7 +364,28 @@ node tools/balance.js --set damageScale=0.8 --set cost.curve=1.5
 
 既知の偏り：獣・魔導は安い駒が多く、数を揃えやすいため5体以上が強い。プリセットは平均4秒台で速く、ハニカムが強め（62%）でペンタグラムが弱め（40%）。いずれも許容範囲として、駒が増えた後に測り直す。
 
-## 12. 今後の予定
+## 12. 対戦環境（バージョン）
+
+調整を続けながら、過去の環境もそのまま遊べるようにする。**環境** = 駒・種族シナジー・遺物・プリセットチーム・ボードのコスト上限・バランス値（`balance.js`）の組。
+
+| 環境 | 中身 | 保存チームの場所（localStorage） |
+|---|---|---|
+| Ver.1（保存版） | `src/data/environments/v1.js` に固定したコピー。手で直さない | `auto-battler.teams.v1`（環境を分ける前からの保存先） |
+| Ver.2（調整中・最新） | いつものデータファイル（`pieces.js`・`tribes.js`・`relics.js`・`presetTeams.js`・`balance.js`・`boards.js` のコスト上限） | `auto-battler.teams.v1@v2` |
+
+- 画面上部の「環境」で切り替える。切り替えるとページを読み込み直す。選んだ環境はブラウザに覚える（`auto-battler.env`）。初めての人は最新の環境。
+- 対戦は同じ環境のチーム同士だけ。ボード・ルール（ダメージ式・計算行など）の仕組みは全環境で共通で、変わるのは数値とデータ。
+- 保存チーム（9スロット）は環境ごとに別。自作駒は全環境で共通（コストはその環境の式で計算し直す）。
+- チームのJSONには作った環境（`env`）が入る。別の環境のJSONも読み込めて、そのときは「Ver.1で作られたチームです」と案内する。環境を他へ移したいときはJSONで書き出して読み込む。
+- 仕組み：`src/data/environment.js` の `applyEnvironment(id)` が、各データファイルが export しているオブジェクト・配列の中身を入れ替える。
+- バランス調整ツールは `node tools/balance.js --env v1` で過去の環境を測れる。
+
+**新しいバージョンを切るとき**（例：Ver.2 を固定して Ver.3 の調整を始める）
+1. `node tools/snapshot-env.js v2 "Ver.2"` → `src/data/environments/v2.js` ができる
+2. `src/data/environments/index.js` の `SNAPSHOTS` に v2 を足す
+3. `src/data/environment.js` の `LATEST` を `id: 'v3', name: 'Ver.3'` にする（Ver.3 の保存チームは新しい場所になる）
+
+## 13. 今後の予定
 
 - 見た目の差し替え。駒作成でドット絵を描けるエディタ（16×16程度）を追加し、`sprite` に保存する。
 - スマホは「動けばよい」扱い。PCを優先する。

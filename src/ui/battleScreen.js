@@ -324,6 +324,7 @@ export function initBattleScreen({ getTeams }) {
 
   return {
     record,
+    isRunning: () => !!game?.running && !game.battle.state.done,
     // ホームから、モードを決めて対戦タブを開く。再生中は切り替えない。
     openMode(next) {
       if (!next || next === mode || (game?.running && !game.battle.state.done)) return;
