@@ -4,7 +4,7 @@
 
 ## 遊ぶ
 
-GitHub Pages で公開中: https://<ユーザー名>.github.io/auto-battler/
+GitHub Pages で公開中: https://stm28355-ux.github.io/auto-battler/
 
 ## 開発
 
