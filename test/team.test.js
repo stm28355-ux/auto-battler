@@ -37,11 +37,12 @@ test('コスト計算（調整前の式：整数に切り上げ）', neutral(() 
   assert.equal(pieceCost({ kind: 'item', atk: 0, def: 0, effects: [] }), 1); // 最低1
 }));
 
-test('コスト計算（調整後の式）：0.5刻み、最低0.5、高い駒ほど割高', () => {
+test('コスト計算（調整後の式）：整数、最低1、高い駒ほど割高', () => {
   const c = BALANCE.cost;
+  assert.equal(c.step, 1);
   for (const p of catalog.pieces()) {
     const { raw, total } = costBreakdown(p);
-    assert.equal(total % c.step, 0, p.id);
+    assert.ok(Number.isInteger(total), `${p.id} ${total}`);
     assert.ok(total >= c.step, p.id);
     // 丸めによるずれは刻みの半分まで（最低コストで底上げされる分を除く）
     if (total > c.step) assert.ok(Math.abs(total - c.scale * raw ** c.curve) <= c.step / 2 + 1e-9, p.id);
@@ -76,9 +77,11 @@ test('チーム検証', neutral(() => {
     ['キャラクターを1体以上配置してください']);
   assert.match(validateTeam(team('square', [{ pos: [4, 1], pieceId: 'c_wolf' }]), catalog)[0], /マスではありません/);
   assert.match(validateTeam(team('honeycomb', [{ pos: [1, 1], pieceId: 'c_wolf' }]), catalog)[0], /マスではありません/);
-  const heavy = team('pentagram', ['2,1', '2,2', '2,3', '2,4', '2,5', '3,1', '3,2', '3,3'].map((k) => ({ pos: k.split(',').map(Number), pieceId: 'c_golem' })));
-  assert.equal(teamCost(heavy, catalog), 24);
-  assert.match(validateTeam(heavy, catalog).join(), /コストが上限を超えています/);
+  const big = { id: 'big', kind: 'character', name: 'big', icon: '?', tribe: 'warrior', hp: 1000, atk: 100, def: 100, spd: 3, effects: [] };
+  const bigCatalog = createCatalog([big]);
+  const heavy = team('pentagram', ['2,1', '2,2', '2,3', '2,4'].map((k) => ({ pos: k.split(',').map(Number), pieceId: 'big' })));
+  assert.equal(teamCost(heavy, bigCatalog), 48); // 1体12
+  assert.match(validateTeam(heavy, bigCatalog).join(), /コストが上限を超えています/);
   const relics = team('square', [{ pos: [1, 1], pieceId: 'c_wolf' }], ['r_heart', 'r_amulet', 'r_totem', 'r_spring']);
   assert.match(validateTeam(relics, catalog).join(), /遺物は3つまで/);
 }));

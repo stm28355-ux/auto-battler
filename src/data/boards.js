@@ -10,7 +10,7 @@ export const BOARDS = {
     id: 'pentagram',
     name: 'ペンタグラム',
     shape: 'triangle',
-    costCap: 20,
+    costCap: 40,
     cells: [
       [1, 3],
       [2, 1], [2, 2], [2, 3], [2, 4], [2, 5],
@@ -22,7 +22,7 @@ export const BOARDS = {
     id: 'square',
     name: 'スクエア',
     shape: 'square',
-    costCap: 25,
+    costCap: 50,
     cells: [
       [1, 1], [1, 2], [1, 3],
       [2, 1], [2, 2], [2, 3],
@@ -33,7 +33,7 @@ export const BOARDS = {
     id: 'honeycomb',
     name: 'ハニカム',
     shape: 'hex',
-    costCap: 30,
+    costCap: 60,
     cells: [
       [1, 2], [1, 4],
       [2, 1], [2, 3], [2, 5],

@@ -23,6 +23,7 @@ const EFFECT_FIELDS = {
   poison: ['stacks', 'chance'],
   paralyze: ['target', 'duration', 'chance'],
   adjAtkMult: ['mult'],
+  rowBuff: ['stat', 'mode', 'value'],
   heal: ['amount', 'interval'],
 };
 const MAX_EFFECTS_READ = 8; // 多すぎる配列は、検査の前に切り詰める

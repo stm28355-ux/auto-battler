@@ -26,11 +26,20 @@ export function resolveTeam(team, catalog) {
     for (const e of relic.effects) if (e.type === 'statBuff') buffs.push({ ...e, tribe: e.tribe ?? null });
   }
 
-  const buffed = (stat, base, tribe) => {
+  // 行効果：同じ行のキャラクターに効く（効果を持つ駒自身がキャラクターなら自分にも）
+  const rowBuffs = placed.flatMap(({ pos, piece }) =>
+    (piece.effects ?? []).filter((e) => e.type === 'rowBuff').map((e) => ({ ...e, row: pos[0] })));
+
+  const buffed = (stat, base, tribe, row) => {
     let add = 0;
     let pct = 0;
     for (const b of buffs) {
       if (b.stat !== stat || (b.tribe && b.tribe !== tribe)) continue;
+      if (b.mode === 'pct') pct += b.value;
+      else add += b.value;
+    }
+    for (const b of rowBuffs) {
+      if (b.stat !== stat || b.row !== row) continue;
       if (b.mode === 'pct') pct += b.value;
       else add += b.value;
     }
@@ -60,10 +69,10 @@ export function resolveTeam(team, catalog) {
       row: pos[0],
       piece,
       tribe: piece.tribe,
-      hp: buffed('hp', piece.hp, piece.tribe),
-      atk: buffed('atk', atk, piece.tribe),
-      def: buffed('def', def, piece.tribe),
-      spd: buffed('spd', piece.spd, piece.tribe),
+      hp: buffed('hp', piece.hp, piece.tribe, pos[0]),
+      atk: buffed('atk', atk, piece.tribe, pos[0]),
+      def: buffed('def', def, piece.tribe, pos[0]),
+      spd: buffed('spd', piece.spd, piece.tribe, pos[0]),
       atkMult,
       onHit,
     });

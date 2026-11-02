@@ -5,6 +5,7 @@ export const EFFECT_TYPES = {
   poison: { name: '毒', on: ['character', 'item'] },
   paralyze: { name: '麻痺', on: ['character', 'item'] },
   adjAtkMult: { name: '隣接攻撃倍率', on: ['character', 'item'] },
+  rowBuff: { name: '行効果', on: ['character', 'item'] },
   heal: { name: '回復', on: ['character', 'item', 'relic'] },
   statBuff: { name: 'ステータス強化', on: ['relic'] },
   poisonBonus: { name: '毒付与量', on: [] }, // 種族ボーナス専用
@@ -35,6 +36,8 @@ export function describeEffect(e) {
       return `攻撃時 ${chanceText(e.chance)}麻痺${e.duration}秒（${PARALYZE_TARGETS[e.target]}）`;
     case 'adjAtkMult':
       return `隣接キャラの攻撃倍率+${pct(e.mult)}`;
+    case 'rowBuff':
+      return `同じ行のキャラの${STAT_NAMES[e.stat]}+${e.mode === 'pct' ? pct(e.value) : e.value}`;
     case 'heal':
       return `${e.interval}秒ごとにHP+${e.amount}`;
     case 'statBuff': {

@@ -32,6 +32,26 @@ export const CHARACTERS = [
     effects: [{ type: 'poison', stacks: 2, chance: 1 }] },
   { id: 'c_behemoth', kind: 'character', name: '古の巨獣', icon: '🦣', tribe: 'beast', hp: 900, atk: 45, def: 40, spd: 0.9, effects: [] },
   { id: 'c_fighter', kind: 'character', name: '戦闘機', icon: '✈️', tribe: 'machine', hp: 450, atk: 55, def: 40, spd: 1.3, effects: [] },
+
+  // 追加（各種族6体まで）。行効果を持つ駒を含む。
+  { id: 'c_paladin', kind: 'character', name: '聖騎士', icon: '⚜️', tribe: 'warrior', hp: 500, atk: 35, def: 45, spd: 0.9,
+    effects: [{ type: 'rowBuff', stat: 'def', mode: 'add', value: 10 }] },
+  { id: 'c_witch', kind: 'character', name: '魔女', icon: '🧹', tribe: 'mage', hp: 200, atk: 25, def: 10, spd: 1.1,
+    effects: [{ type: 'poison', stacks: 1, chance: 0.6 }, { type: 'rowBuff', stat: 'atk', mode: 'pct', value: 0.1 }] },
+  { id: 'c_oracle', kind: 'character', name: '預言者', icon: '👁️', tribe: 'mage', hp: 260, atk: 20, def: 15, spd: 1.0,
+    effects: [{ type: 'rowBuff', stat: 'atk', mode: 'add', value: 8 }] },
+  { id: 'c_boar', kind: 'character', name: '猪', icon: '🐗', tribe: 'beast', hp: 350, atk: 32, def: 15, spd: 1.1, effects: [] },
+  { id: 'c_hawk', kind: 'character', name: '鷹', icon: '🦅', tribe: 'beast', hp: 200, atk: 25, def: 5, spd: 1.6,
+    effects: [{ type: 'rowBuff', stat: 'spd', mode: 'pct', value: 0.1 }] },
+  { id: 'c_turret', kind: 'character', name: '砲台', icon: '🗼', tribe: 'machine', hp: 300, atk: 45, def: 30, spd: 0.8, effects: [] },
+  { id: 'c_reactor', kind: 'character', name: '動力炉', icon: '🔋', tribe: 'machine', hp: 500, atk: 15, def: 35, spd: 0.7,
+    effects: [{ type: 'rowBuff', stat: 'hp', mode: 'pct', value: 0.1 }] },
+
+  // 中立（シナジーで攻撃+10%が付くので、能力はやや控えめ）。後ろの駒ほど高コストで強い。
+  { id: 'c_elf', kind: 'character', name: 'エルフ', icon: '🧝', tribe: 'neutral', hp: 220, atk: 25, def: 10, spd: 1.2, effects: [] },
+  { id: 'c_dwarf', kind: 'character', name: 'ドワーフ', icon: '⛏️', tribe: 'neutral', hp: 450, atk: 35, def: 40, spd: 0.9,
+    effects: [{ type: 'rowBuff', stat: 'def', mode: 'add', value: 8 }] },
+  { id: 'c_fiend', kind: 'character', name: '魔人', icon: '👹', tribe: 'neutral', hp: 700, atk: 55, def: 40, spd: 1.1, effects: [] },
 ];
 
 export const ITEMS = [

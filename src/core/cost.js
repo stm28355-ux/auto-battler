@@ -17,6 +17,17 @@ export function effectCost(e) {
       return c.adjAtkMult * e.mult;
     case 'heal':
       return (c.heal * e.amount) / e.interval;
+    case 'rowBuff': {
+      // 基準キャラ（HP300・攻撃30・防御30・速度1）1体への効きめを、同じ行の想定人数ぶん数える
+      const add = e.mode === 'add';
+      const gain = {
+        hp: (add ? e.value : e.value * 300) / c.hp,
+        atk: (add ? e.value : e.value * 30) / c.atkSpd,
+        def: (add ? e.value : e.value * 30) / c.def,
+        spd: (e.value * 30) / c.atkSpd,
+      }[e.stat] ?? 0;
+      return c.rowBuff * gain;
+    }
     default:
       return 0;
   }

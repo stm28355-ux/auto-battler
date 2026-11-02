@@ -419,3 +419,7 @@ textarea {
   .clock { grid-column: 1 / -1; order: -1; }
   .buttons { margin-left: 0; }
 }
+
+.row-table { border-collapse: collapse; font-size: 0.85em; margin-bottom: 0.5em; }
+.row-table th, .row-table td { padding: 2px 8px; text-align: right; border-bottom: 1px solid #444; }
+.row-table th:first-child, .row-table td:first-child { text-align: left; }

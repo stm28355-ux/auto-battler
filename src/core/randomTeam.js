@@ -40,10 +40,10 @@ export function randomTeam(boardId, pieces, rng, { itemRate = 0.3, spread = 1.4,
   };
 
   // キャラクター：道具の分のコストを少し残して、1マスごとの予算に合わせて選ぶ
-  const reserve = itemCount * 1.5;
+  const reserve = itemCount * 3;
   charCells.forEach((pos, i) => {
     const share = Math.max(0, budget - reserve) / (charCells.length - i);
-    const piece = pick('character', Math.max(0.5, Math.floor(share * floor)), Math.max(1, Math.round(share * spread)));
+    const piece = pick('character', Math.max(1, Math.floor(share * floor)), Math.max(2, Math.round(share * spread)));
     if (piece) place(pos, piece);
   });
   // 条件に合う駒がなくてキャラクターが0体になったときは、いちばん安いキャラクターを置く
@@ -66,7 +66,7 @@ export function randomTeam(boardId, pieces, rng, { itemRate = 0.3, spread = 1.4,
   let open = shuffle(itemCells, rng);
   for (let i = 0; i < itemCells.length; i++) {
     const share = budget / (itemCells.length - i);
-    const piece = pick('item', 0.5, Math.max(1, Math.round(share * spread)));
+    const piece = pick('item', 1, Math.max(2, Math.round(share * spread)));
     if (!piece) continue;
     const best = open.reduce((a, b) => (value(piece, b) > value(piece, a) ? b : a));
     open = open.filter((pos) => pos !== best);

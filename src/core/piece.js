@@ -1,4 +1,4 @@
-import { EFFECT_TYPES, PARALYZE_TARGETS } from '../data/effects.js';
+import { EFFECT_TYPES, PARALYZE_TARGETS, STAT_NAMES } from '../data/effects.js';
 import { TRIBES } from '../data/tribes.js';
 
 // 駒作成で入力できる範囲（spec §3）。
@@ -30,6 +30,14 @@ function validateEffect(e, kind) {
       break;
     case 'adjAtkMult':
       if (!inRange(e.mult, [0, 5])) return '攻撃倍率は0〜5にしてください';
+      break;
+    case 'rowBuff':
+      if (!has(STAT_NAMES, e.stat)) return `行効果の対象ステータスが不正です（${e.stat}）`;
+      if (e.mode !== 'add' && e.mode !== 'pct') return '行効果は固定値(add)か割合(pct)にしてください';
+      if (e.mode === 'add' && e.stat === 'spd') return '行効果で攻撃速度は割合のみ指定できます';
+      if (!inRange(e.value, e.mode === 'pct' ? [0.01, 1] : e.stat === 'hp' ? [1, 500] : [1, 100])) {
+        return e.mode === 'pct' ? '行効果の割合は0.01〜1にしてください' : '行効果の固定値が範囲外です（HP 1〜500、攻撃・防御 1〜100）';
+      }
       break;
     case 'heal':
       if (!inRange(e.amount, [1, 1000])) return '回復量は1〜1000にしてください';

@@ -1,6 +1,7 @@
 import { BALANCE } from '../data/balance.js';
 import { createRng } from './rng.js';
 import { resolveTeam } from './resolve.js';
+import { fillRows, foldOf, rowStats } from '../core/rows.js';
 
 export const DT = 0.05; // 1ステップの秒数
 export const MAX_STEPS = 600; // 30秒
@@ -27,22 +28,6 @@ function initSide(team, catalog) {
   };
 }
 
-// 攻撃者と同じ行の前線。なければいちばん近い行（同じ距離なら行番号が小さい方）。
-function pickFront(side, row) {
-  let unit = side.resolved.fronts.get(row);
-  if (!unit) {
-    let best = Infinity;
-    for (const [r, u] of side.resolved.fronts) {
-      const d = Math.abs(r - row);
-      if (d < best) {
-        best = d;
-        unit = u;
-      }
-    }
-  }
-  return side.units[unit.index];
-}
-
 function pickParalyzeTarget(effect, victim, front, rng) {
   switch (effect.target) {
     case 'front':
@@ -64,6 +49,11 @@ function pickParalyzeTarget(effect, victim, front, rng) {
 export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = {}) {
   const rng = createRng(seed);
   const sides = { a: initSide(teamA, catalog), b: initSide(teamB, catalog) };
+  const boards = { a: teamA.board, b: teamB.board };
+  // 計算行ごとの防御と、攻撃を受ける駒（spec §2。ペンタグラムが他のボードと向かい合うときは4行を3行にする）
+  for (const key of SIDES) {
+    sides[key].rows = fillRows(rowStats(sides[key].resolved.units, boards[key], boards[other(key)]));
+  }
   const events = [];
   const history = [];
   const state = { step: 0, done: false, result: null };
@@ -117,11 +107,21 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
       const own = sides[key];
       const foeKey = other(key);
       const foe = sides[foeKey];
-      const front = pickFront(foe, s.unit.row);
-      const dmg = (s.unit.atk * s.unit.atkMult * 100 * BALANCE.damageScale) / (100 + front.unit.def);
-      damage[foeKey] += dmg;
-      own.dealt += dmg;
-      emit({ type: 'attack', side: key, from: s.unit.pos, to: front.unit.pos, dmg });
+      // 攻撃は、自分の行が振り分けられた計算行ごとに、割合ぶんずつ当たる
+      let front = null;
+      let frontShare = 0;
+      for (const [calc, share] of foldOf(boards[key], boards[foeKey], s.unit.row)) {
+        const row = foe.rows[calc - 1];
+        const target = foe.units[row.target.index];
+        const dmg = (share * s.unit.atk * s.unit.atkMult * 100 * BALANCE.damageScale) / (100 + row.def);
+        damage[foeKey] += dmg;
+        own.dealt += dmg;
+        emit({ type: 'attack', side: key, from: s.unit.pos, to: target.unit.pos, dmg });
+        if (share > frontShare) {
+          frontShare = share;
+          front = target;
+        }
+      }
 
       for (const effect of s.unit.onHit) {
         if (effect.chance < 1 && rng() >= effect.chance) continue;

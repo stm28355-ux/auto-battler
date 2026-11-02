@@ -1,4 +1,4 @@
-import { PARALYZE_TARGETS } from '../data/effects.js';
+import { PARALYZE_TARGETS, STAT_NAMES } from '../data/effects.js';
 import { TRIBES } from '../data/tribes.js';
 import { costBreakdown } from '../core/cost.js';
 import { MAX_EFFECTS, STAT_RANGES, validatePiece } from '../core/piece.js';
@@ -26,7 +26,9 @@ const NEW_PIECE = {
   item: { kind: 'item', name: '新しい道具', icon: '⚙️', atk: 10, def: 10, effects: [] },
 };
 
-// 効果ごとの初期値と、入力欄。scale: 画面では%で入力する値。
+const ROW_BUFF_MODES = { add: '固定値', pct: '割合(%)' };
+
+// 効果ごとの初期値と、入力欄。scale: 画面では%で入力する値。min/max/scale は効果によって変わるなら関数にする。
 const EFFECTS = {
   poison: {
     name: '毒',
@@ -49,6 +51,15 @@ const EFFECTS = {
     name: '隣接攻撃倍率',
     make: () => ({ type: 'adjAtkMult', mult: 0.2 }),
     fields: [{ k: 'mult', label: '隣接キャラの攻撃+%', min: 0, max: 500, step: 5, scale: 100 }],
+  },
+  rowBuff: {
+    name: '行効果',
+    make: () => ({ type: 'rowBuff', stat: 'atk', mode: 'add', value: 10 }),
+    fields: [
+      { k: 'stat', label: '対象の値', options: STAT_NAMES },
+      { k: 'mode', label: '種類', options: ROW_BUFF_MODES },
+      { k: 'value', label: '同じ行のキャラに加算', min: 1, max: (e) => (e.mode === 'pct' ? 100 : e.stat === 'hp' ? 500 : 100), step: 1, scale: (e) => (e.mode === 'pct' ? 100 : 1) },
+    ],
   },
   heal: {
     name: '回復',
@@ -115,9 +126,11 @@ export function initPieceEditor({ store }) {
         return `<label>${f.label} <select data-e="${i}" data-k="${f.k}">${Object.entries(f.options)
           .map(([id, name]) => `<option value="${id}"${id === e[f.k] ? ' selected' : ''}>${escapeHtml(name)}</option>`).join('')}</select></label>`;
       }
-      const shown = f.scale ? Math.round(e[f.k] * f.scale) : e[f.k];
-      return `<label>${f.label} <input type="number" data-e="${i}" data-k="${f.k}"${f.scale ? ` data-scale="${f.scale}"` : ''}`
-        + ` min="${f.min}" max="${f.max}" step="${f.step}" value="${shown}"></label>`;
+      const of = (x) => (typeof x === 'function' ? x(e) : x);
+      const scale = of(f.scale);
+      const shown = scale ? Math.round(e[f.k] * scale) : e[f.k];
+      return `<label>${f.label} <input type="number" data-e="${i}" data-k="${f.k}"${scale ? ` data-scale="${scale}"` : ''}`
+        + ` min="${of(f.min)}" max="${of(f.max)}" step="${f.step}" value="${shown}"></label>`;
     }).join('');
     return `<div class="effect-row">${typeSelect}${fields}<button type="button" data-remove-effect="${i}" title="この効果を外す">✕</button></div>`;
   };
@@ -217,6 +230,15 @@ export function initPieceEditor({ store }) {
     if (form && el.dataset.e !== undefined && el.dataset.k === 'type') {
       form.effects[Number(el.dataset.e)] = EFFECTS[el.value].make();
       renderForm(); // 効果の種類を変えると入力欄が変わる
+    } else if (form && el.dataset.e !== undefined && ['mode', 'stat'].includes(el.dataset.k)) {
+      // 行効果の種類・対象を変えたら、値の単位が変わるので入れ直す（攻撃速度は割合のみ）
+      const effect = form.effects[Number(el.dataset.e)];
+      if (effect?.type === 'rowBuff') {
+        if (effect.stat === 'spd') effect.mode = 'pct';
+        effect.value = effect.mode === 'pct' ? 0.1 : effect.stat === 'hp' ? 50 : 10;
+        renderForm();
+        renderDerived();
+      }
     }
   });
 
