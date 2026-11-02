@@ -6,7 +6,8 @@ import { MAX_RELICS, teamCost } from '../core/team.js';
 import { BUILTIN_IDS, exportTeamJson, MAX_JSON_CHARS, MAX_NAME, parseTeamJson } from '../storage/teamJson.js';
 import { SLOT_COUNT } from '../storage/teamStore.js';
 import { renderBoard } from './boardView.js';
-import { $, effectsText, escapeHtml, pieceSummary } from './format.js';
+import { TRIBES } from '../data/tribes.js';
+import { $, effectsText, escapeHtml, pieceSummary, tribeTag } from './format.js';
 import { teamInfoHtml } from './teamInfo.js';
 
 const ERASER = '__erase__';
@@ -124,16 +125,26 @@ export function initTeamEditor({ store, pieceStore }) {
 
   function renderPalette() {
     const cat = catalog();
-    const button = (p) => `<button type="button" class="piece-btn${tool === p.id ? ' selected' : ''}${isCustom(p.id) ? ' piece-btn--custom' : ''}" data-id="${escapeHtml(p.id)}">`
+    const plain = (s) => s.replace(/<[^>]*>/g, ' ').replace(/&#\d+;/g, '');
+    const button = (p) => `<button type="button" class="piece-btn${tool === p.id ? ' selected' : ''}${isCustom(p.id) ? ' piece-btn--custom' : ''}" data-id="${escapeHtml(p.id)}"`
+      + ` title="${escapeHtml(plain(pieceSummary(p)))}">`
       + `${escapeHtml(p.icon)} ${escapeHtml(p.name)} <span class="cost">${pieceCost(p)}</span></button>`;
+    // データ一覧と同じ並び：種族 → コスト → HP（道具はコスト順）
+    const byCost = (a, b) => pieceCost(a) - pieceCost(b) || (a.hp ?? 0) - (b.hp ?? 0);
+    const all = cat.pieces();
+    const tribeRows = Object.entries(TRIBES).map(([id, t]) => {
+      const list = all.filter((p) => p.kind === 'character' && p.tribe === id).sort(byCost);
+      const tiers = Object.keys(t.bonuses).join('/');
+      return list.length ? `<div class="palette-row"><span class="palette-label">${tribeTag(id)}<small class="muted">${tiers}体</small></span>${list.map(button).join('')}</div>` : '';
+    }).join('');
     const row = (label, kind) => `<div class="palette-row"><span class="palette-label">${label}</span>`
-      + `${cat.pieces().filter((p) => p.kind === kind).map(button).join('')}</div>`;
+      + `${all.filter((p) => p.kind === kind).sort(byCost).map(button).join('')}</div>`;
     const stale = outdated();
     const note = stale.length
       ? `<div class="palette-note">⚠ 自作駒 ${stale.map((p) => `「${escapeHtml(p.name)}」`).join('')}に、駒作成で更新された新しい版があります。`
         + ' <button type="button" data-update>最新版に更新</button></div>'
       : '';
-    $('palette').innerHTML = note + row('キャラクター', 'character') + row('道具', 'item')
+    $('palette').innerHTML = note + tribeRows + row('道具', 'item')
       + `<div class="palette-row"><span class="palette-label">その他</span>`
       + `<button type="button" class="piece-btn${tool === ERASER ? ' selected' : ''}" data-id="${ERASER}">🧹 消す</button>`
       + '<span class="muted">マスの右クリックでも消せます</span></div>';

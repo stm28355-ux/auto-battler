@@ -350,7 +350,7 @@ textarea {
 
 #palette { display: grid; gap: 8px; }
 .palette-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.palette-label { width: 6.5em; color: var(--muted); font-size: 0.85rem; }
+.palette-label { width: 6.5em; color: var(--muted); font-size: 0.85rem; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; }
 .piece-btn { padding: 4px 8px; font-size: 0.85rem; }
 .piece-btn.selected { border-color: var(--front); background: #3b3a2a; }
 .piece-btn .cost {
