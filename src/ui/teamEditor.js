@@ -18,7 +18,7 @@ const blankTeam = () => ({ name: '新しいチーム', board: 'square', slots: [
 
 // 「チーム編成」タブ：駒を選んでマスに置き、9つのスロットに保存する。JSONの入出力にも対応。
 // setContext で「ストーリー用の編成」に切り替えられる（保存先・コスト上限・使える駒と遺物が変わり、自作駒とJSONは使わない）。
-//   context: { label, store, rules(): validateTeam の制限, onBack(): 戻る, onSaved(slot): 保存したとき }。null なら通常の編成
+//   context: { label, store, rules(): validateTeam の制限, onBack(): 戻る, onSaved(slot): 保存したとき, preferredSlot(): 開くときのスロット }。null なら通常の編成
 export function initTeamEditor({ store, pieceStore }) {
   let context = null;
   const activeStore = () => context?.store ?? store;
@@ -364,15 +364,19 @@ export function initTeamEditor({ store, pieceStore }) {
     isDirty: dirty,
     // 通常の編成とストーリー用の編成を切り替える。未保存の変更を破棄しないと決めたら false
     setContext(next) {
+      const want = next?.preferredSlot?.();
       if (next?.store === context?.store) {
         if (next) context = next;
-        render();
+        // 同じ場面に戻ってきたとき：変更がなければ、選ばれているスロットを開き直す
+        saved = activeStore().load();
+        if (saved[want] && want !== loadedSlot && !dirty()) loadDraft(saved[want], { fromSlot: want });
+        else render();
         return true;
       }
       if (!confirmDiscard()) return false;
       context = next;
       saved = activeStore().load();
-      const first = saved.findIndex(Boolean);
+      const first = saved[want] ? want : saved.findIndex(Boolean);
       if (first >= 0) loadDraft(saved[first], { fromSlot: first });
       else {
         slot = 0;

@@ -183,6 +183,8 @@ export function initStory({ go, battle, teamStore, storage, env, latest, switchT
     if (usable.length) {
       $('story-team').value = String(usable.includes(preferredSlot()) ? preferredSlot() : usable[0]);
       $('story-team').addEventListener('change', () => rememberSlot(Number($('story-team').value)));
+      // 「編成する」では、いま選んでいるスロットを開く
+      root().querySelector('.story-pre [data-story-team]').addEventListener('click', () => rememberSlot(Number($('story-team').value)));
     }
 
     root().querySelector('[data-fight]').addEventListener('click', () => {
@@ -297,6 +299,7 @@ export function initStory({ go, battle, teamStore, storage, env, latest, switchT
         rules: () => storyRules(status()),
         onBack: () => go('story'),
         onSaved: rememberSlot,
+        preferredSlot,
       };
     },
   };
