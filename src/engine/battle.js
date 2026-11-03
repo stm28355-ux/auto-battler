@@ -13,19 +13,36 @@ const other = (side) => (side === 'a' ? 'b' : 'a');
 const stepsOf = (seconds) => Math.max(1, Math.round(seconds / DT));
 const timeOf = (step) => +(step * DT).toFixed(2);
 
+// 戦闘の内訳（どの駒がどれだけ与え・受け・回復したか）。log: true のときだけ集める（画面の結果表示用）
+//   key: 駒は座標、遺物・種族ボーナスはID。attack: 攻撃、poison: 毒、curse: 呪いで増えた分、taken: 攻撃を受けた量、heal: 実際に回復した量
+const sourceKey = (src) => (src.pos ? `${src.pos[0]},${src.pos[1]}` : `${src.kind}:${src.id}`);
+function initStats(resolved) {
+  const stats = new Map();
+  const add = (src) => {
+    if (!stats.has(sourceKey(src))) stats.set(sourceKey(src), { ...src, attack: 0, poison: 0, curse: 0, taken: 0, heal: 0 });
+  };
+  for (const u of resolved.units) add({ kind: 'piece', id: u.piece.id, pos: u.pos });
+  for (const h of resolved.healers) add(h.source);
+  for (const p of resolved.pulses) add(p.source);
+  return stats;
+}
+
 function initSide(team, catalog) {
   const resolved = resolveTeam(team, catalog);
   return {
+    stats: initStats(resolved),
+    poisonTaken: 0, // 毒で受けたダメージ（チーム全体。内訳用）
+    curseTaken: 0, // 呪いで増えて受けたダメージ（チーム全体。内訳用）
     resolved,
     hp: resolved.maxHp,
     maxHp: resolved.maxHp,
     poison: 0, // このチームにかかっている毒の蓄積量（有効なものの合計）
-    poisons: [], // 毒の付与の記録 { stacks, until }（until は消えるステップ。永続なら Infinity）
+    poisons: [], // 毒の付与の記録 { stacks, until, src }（until は消えるステップ。永続なら Infinity。src は付けた駒）
     dealt: 0, // 相手に与えたダメージの合計（毒を含む）
     poisonDealt: 0, // そのうち毒によるダメージ（バランス調整で見る）
     curseSteps: 0, // このチームにかかっている呪いの残りステップ数
     units: resolved.units.map((unit) => ({ unit, progress: 0, paraSteps: 0 })),
-    healers: resolved.healers.map((h) => ({ amount: h.amount, every: stepsOf(h.interval), counter: 0 })),
+    healers: resolved.healers.map((h) => ({ amount: h.amount, every: stepsOf(h.interval), counter: 0, source: h.source })),
     pulses: resolved.pulses.map((p) => ({ ...p, every: stepsOf(p.interval), counter: 0 })),
   };
 }
@@ -84,9 +101,27 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
       dealt: { a: sides.a.dealt, b: sides.b.dealt },
       poisonDealt: { a: sides.a.poisonDealt, b: sides.b.poisonDealt },
       seed,
-      ...(log && { log: events, history }),
+      ...(log && { log: events, history, stats: statsOf() }),
     };
   }
+
+  function statsOf() {
+    const out = {};
+    for (const key of SIDES) {
+      const s = sides[key];
+      out[key] = { sources: [...s.stats.values()], poisonTaken: s.poisonTaken, curseTaken: s.curseTaken, dealt: s.dealt };
+    }
+    return out;
+  }
+  // このステップで誰が誰にどれだけ与えたか（呪いで増えた分を、元のダメージの割合で分けるため）
+  let stepDealt = { a: new Map(), b: new Map() };
+  const credit = (key, src, field, amount) => {
+    if (!log || !amount) return;
+    const rec = sides[key].stats.get(sourceKey(src));
+    if (!rec) return;
+    rec[field] += amount;
+    if (field === 'attack' || field === 'poison') stepDealt[key].set(rec, (stepDealt[key].get(rec) ?? 0) + amount);
+  };
 
   // HP割合で勝者を決める。ほぼ同じ値なら引き分け。
   function decideByRatio(reason) {
@@ -95,13 +130,13 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
   }
 
   // 状態異常を付ける（攻撃時の効果と、定期付与の両方から使う）
-  function inflict(key, effect, front) {
+  function inflict(key, effect, front, src) {
     const own = sides[key];
     const foe = sides[other(key)];
     if (effect.type === 'poison') {
       const stacks = effect.stacks + own.resolved.poisonBonus;
       const lasts = BALANCE.poisonDuration === null ? Infinity : stepsOf(BALANCE.poisonDuration);
-      foe.poisons.push({ stacks, until: state.step + lasts });
+      foe.poisons.push({ stacks, until: state.step + lasts, src });
       foe.poison += stacks;
       emit({ type: 'poison', side: key, stacks, total: foe.poison });
     } else if (effect.type === 'curse') {
@@ -119,6 +154,8 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
   function advance() {
     if (state.done) return;
     state.step += 1;
+    stepDealt = { a: new Map(), b: new Map() };
+    const healBy = { a: [], b: [] };
     const damage = { a: 0, b: 0 };
     const heal = { a: 0, b: 0 };
     // 呪いの判定はステップ開始時点のもの（このステップで付いた呪いは次のステップから効く）
@@ -156,6 +193,8 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
         const dmg = share * hitDamage(s.unit.atk * s.unit.atkMult * BALANCE.damageScale, row.def, s.unit.pierce ?? 0);
         damage[foeKey] += dmg;
         own.dealt += dmg;
+        credit(key, s.unit, 'attack', dmg);
+        credit(foeKey, target.unit, 'taken', dmg);
         emit({ type: 'attack', side: key, from: s.unit.pos, to: target.unit.pos, dmg });
         if (share > frontShare) {
           frontShare = share;
@@ -165,7 +204,7 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
 
       for (const effect of s.unit.onHit) {
         if (effect.chance < 1 && rng() >= effect.chance) continue;
-        inflict(key, effect, front);
+        inflict(key, effect, front, s.unit);
       }
     }
 
@@ -177,7 +216,7 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
         if (p.counter < p.every) continue;
         p.counter = 0;
         const front = foe.units[foe.rows[0].target.index];
-        inflict(key, p.status === 'curse' ? { type: 'curse', duration: p.amount } : { type: 'poison', stacks: p.amount }, front);
+        inflict(key, p.status === 'curse' ? { type: 'curse', duration: p.amount } : { type: 'poison', stacks: p.amount }, front, p.source);
       }
     }
 
@@ -194,6 +233,12 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
         damage[key] += dmg;
         sides[other(key)].dealt += dmg;
         sides[other(key)].poisonDealt += dmg;
+        if (log) {
+          // 毒のダメージは、付けた駒ごとの蓄積量の割合で分ける
+          victim.poisonTaken += dmg;
+          const total = victim.poisons.reduce((sum, p) => sum + p.stacks, 0);
+          for (const p of victim.poisons) if (p.src) credit(other(key), p.src, 'poison', (dmg * p.stacks) / total);
+        }
         emit({ type: 'poisonTick', side: key, dmg });
       }
     }
@@ -205,6 +250,7 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
         if (h.counter >= h.every) {
           h.counter = 0;
           heal[key] += h.amount;
+          healBy[key].push(h);
           emit({ type: 'heal', side: key, amount: h.amount });
         }
       }
@@ -217,8 +263,19 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
         const extra = damage[key] * (BALANCE.curseAmp ?? 0);
         damage[key] += extra;
         sides[other(key)].dealt += extra;
+        if (log && extra > 0) {
+          s.curseTaken += extra;
+          const base = damage[key] - extra;
+          for (const [rec, amount] of stepDealt[other(key)]) rec.curse += (extra * amount) / base;
+        }
       }
+      const before = s.hp;
       s.hp = Math.min(s.maxHp, s.hp - damage[key] + heal[key]);
+      if (log && heal[key] > 0) {
+        // 実際に回復した量（最大HPを超えた分は数えない）を、回復した駒・遺物の量の割合で分ける
+        const real = Math.max(0, Math.min(heal[key], s.hp - (before - damage[key])));
+        for (const h of healBy[key]) credit(key, h.source, 'heal', (real * h.amount) / heal[key]);
+      }
     }
     if (log) history.push({ t: timeOf(state.step), a: sides.a.hp, b: sides.b.hp });
 

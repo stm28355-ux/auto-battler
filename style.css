@@ -731,3 +731,25 @@ body[data-view="rules"] .help-btn { border-color: #6d6235; color: var(--accent);
   .rogue-row:not(.rogue-perk) { grid-template-columns: 1fr auto; }
   .rogue-row:not(.rogue-perk) .rogue-price { grid-column: 2; }
 }
+
+/* ---- 対戦結果の内訳 ---- */
+.battle-stats h3 { margin: 0 0 4px; }
+.battle-stats h4 { margin: 12px 0 4px; }
+.stat-legend { font-size: 0.8rem; }
+.stat-legend span { display: inline-block; width: 10px; height: 10px; margin: 0 2px 0 8px; border-radius: 2px; vertical-align: middle; }
+.stat-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.stat-table th, .stat-table td { padding: 3px 6px; border-bottom: 1px solid var(--cell); text-align: left; vertical-align: middle; }
+.stat-table th { color: var(--muted); font-weight: normal; white-space: nowrap; }
+.stat-table tfoot td { border-top: 1px solid var(--cell-line); font-weight: bold; }
+.stat-table tfoot .muted { font-weight: normal; font-size: 0.8rem; }
+.stat-name { white-space: nowrap; }
+.stat-num { text-align: right !important; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.stat-num small { font-weight: normal; }
+.stat-graph { width: 18%; min-width: 80px; }
+.stat-bar { display: flex; height: 10px; background: var(--cell); border-radius: 3px; overflow: hidden; }
+.stat-bar span { display: block; height: 100%; }
+.seg-atk { background: #e8825a; }
+.seg-poison { background: #7bd88f; }
+.seg-curse { background: #b07ae0; }
+.seg-taken { background: #5aa9e6; }
+.seg-heal { background: #f2c14e; }

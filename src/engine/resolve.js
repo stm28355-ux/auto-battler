@@ -108,15 +108,16 @@ export function resolveTeam(team, catalog) {
   const fronts = new Map([...frontLiners(team, catalog)].map(([row, pos]) => [row, unitAt.get(posKey(pos))]));
   const maxHp = units.reduce((sum, u) => sum + u.hp, 0);
 
-  // 回復：駒・遺物の回復と、種族ボーナスの再生（最大HPの割合を毎秒）
-  const healers = [...placed.map((p) => p.piece), ...relics]
-    .flatMap((p) => effectsOf(p, 'heal'))
-    .map((e) => ({ amount: e.amount, interval: e.interval }));
+  // 回復：駒・遺物の回復と、種族ボーナスの再生（最大HPの割合を毎秒）。source は戦闘の内訳に使う
+  const healers = [
+    ...placed.flatMap(({ pos, piece }) => effectsOf(piece, 'heal').map((e) => ({ e, source: { kind: 'piece', id: piece.id, pos } }))),
+    ...relics.flatMap((r) => effectsOf(r, 'heal').map((e) => ({ e, source: { kind: 'relic', id: r.id } }))),
+  ].map(({ e, source }) => ({ amount: e.amount, interval: e.interval, source }));
   const regen = sideSum('regen');
-  if (regen > 0) healers.push({ amount: maxHp * regen, interval: 1 });
+  if (regen > 0) healers.push({ amount: maxHp * regen, interval: 1, source: { kind: 'synergy', id: 'regen' } });
 
   // 定期付与：どこに置いても、一定時間ごとに相手へ状態異常を付ける
-  const pulses = placed.flatMap(({ piece }) => effectsOf(piece, 'pulse')).map((e) => ({ ...e }));
+  const pulses = placed.flatMap(({ pos, piece }) => effectsOf(piece, 'pulse').map((e) => ({ ...e, source: { kind: 'piece', id: piece.id, pos } })));
 
   return {
     board: team.board,

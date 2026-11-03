@@ -258,3 +258,38 @@ test('プリセットチーム同士の総当たりが30秒以内に必ず決着
     }
   }
 });
+
+test('戦闘の内訳：駒ごとの与ダメージの合計がチームの与ダメージと一致し、受けた・回復した量も駒・遺物ごとに分かれる', () => {
+  const catalog = createCatalog([
+    ch('c_hit', { atk: 30 }),
+    ch('c_venom', { atk: 5, effects: [{ type: 'poison', stacks: 2, chance: 1 }] }),
+    ch('c_hex', { atk: 5, effects: [{ type: 'curse', duration: 3, chance: 1 }] }),
+    ch('c_medic', { atk: 1, effects: [{ type: 'heal', amount: 20, interval: 1 }] }),
+    item('i_censer', { effects: [{ type: 'pulse', status: 'poison', amount: 1, interval: 1 }] }),
+  ]);
+  useBalance({ ...NEUTRAL_BALANCE, curseAmp: 0.25 });
+  try {
+    const a = team([[[1, 1], 'c_hit'], [[2, 1], 'c_venom'], [[3, 1], 'c_hex'], [[1, 3], 'i_censer']]);
+    const b = team([[[1, 1], 'c_hit'], [[2, 1], 'c_medic'], [[3, 1], 'c_hit']], ['r_spring']);
+    const r = runBattle(a, b, catalog, { seed: 3, log: true });
+    const sum = (list, f) => list.reduce((s, x) => s + f(x), 0);
+    for (const key of ['a', 'b']) {
+      const st = r.stats[key];
+      close(sum(st.sources, (x) => x.attack + x.poison + x.curse) / r.dealt[key], 1);
+      close(sum(st.sources, (x) => x.poison), r.poisonDealt[key]);
+    }
+    const byKey = (key, k) => r.stats[key].sources.find((x) => (x.pos ? x.pos.join(',') : `${x.kind}:${x.id}`) === k);
+    assert.ok(byKey('a', '2,1').poison > 0, '毒の駒');
+    assert.ok(byKey('a', '1,3').poison > 0, '毒の香炉（道具）');
+    assert.ok(byKey('a', '3,1').curse >= 0);
+    assert.ok(sum(r.stats.a.sources, (x) => x.curse) > 0, '呪いで増えた分');
+    close(r.stats.b.curseTaken, sum(r.stats.a.sources, (x) => x.curse));
+    assert.ok(byKey('b', '2,1').heal > 0 && byKey('b', 'relic:r_spring').heal > 0, '駒と遺物の回復');
+    // 攻撃を受けた量の合計 = 相手の攻撃の合計
+    close(sum(r.stats.b.sources, (x) => x.taken), sum(r.stats.a.sources, (x) => x.attack));
+    // ログなしなら集めない
+    assert.equal(runBattle(a, b, catalog, { seed: 3 }).stats, undefined);
+  } finally {
+    useBalance(NEUTRAL_BALANCE);
+  }
+});

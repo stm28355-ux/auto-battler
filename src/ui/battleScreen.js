@@ -5,6 +5,7 @@ import { createCatalog } from '../core/catalog.js';
 import { createRecord, pickOpponent } from '../core/randomMatch.js';
 import { validateTeam } from '../core/team.js';
 import { createBattle, DT, MAX_STEPS } from '../engine/battle.js';
+import { battleStatsHtml } from './battleStats.js';
 import { renderBoard } from './boardView.js';
 import { $, escapeHtml, pieceSummary, tribeTag } from './format.js';
 
@@ -105,6 +106,7 @@ export function initBattleScreen({ getTeams }) {
     const battle = createBattle(picked.a, picked.b, catalog, { seed: seed(), log: true });
     game = { battle, catalog, teams: picked, views: {}, mode, recorded: false, running: false, paused: false, acc: 0, last: 0, raf: 0, logged: 0 };
     $('result').hidden = true;
+    $('battle-stats').hidden = true;
     $('log').replaceChildren();
     for (const key of SIDES) game.views[key] = buildSide(key);
     applySpeed();
@@ -243,6 +245,8 @@ export function initBattleScreen({ getTeams }) {
     $('result').innerHTML = `${verdict}<strong>${title}</strong><br>${REASONS[r.reason]} ／ ${r.time}秒 ／ `
       + `HP割合 A ${pct(r.ratio.a)} : B ${pct(r.ratio.b)} ／ 与ダメージ A ${Math.round(r.dealt.a)} : B ${Math.round(r.dealt.b)} ／ シード ${r.seed}`;
     $('result').hidden = false;
+    $('battle-stats').innerHTML = battleStatsHtml(r, game.teams, game.catalog);
+    $('battle-stats').hidden = !r.stats;
   }
 
   function updateRecord() {
