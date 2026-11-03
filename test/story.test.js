@@ -67,6 +67,17 @@ test('相手のチームは、ふつうのルールで正しく、そのイベ�
   }
 });
 
+test('強さ：サイドは剣術部・購買部が弱い、ほかは普通。クリア後の再戦は、別の「本気」のチーム（コスト上限の85%以上）', () => {
+  const sides = STORY.events.filter((e) => e.kind === 'side').map((e) => e.battle.opponent);
+  assert.deepEqual(sides.map((k) => BATTLERS[k].strength), ['weak', 'weak', 'normal', 'normal', 'normal', 'normal', 'normal', 'normal']);
+  for (const [id, b] of Object.entries(BATTLERS)) {
+    if (b.noRematch || b.strength === 'strong') continue;
+    assert.ok(b.rematch, `${id} の本気のチーム`);
+    assert.notDeepEqual(b.rematch.slots, b.team.slots, id);
+    assert.ok(teamCost(b.rematch, catalog) >= BOARDS[b.rematch.board].costCap * 0.85, `${id} ${teamCost(b.rematch, catalog)}`);
+  }
+});
+
 test('進行：コストは 50% → 60% → 75% → 90% → 100% と上がり、クリア後はすべて使える', () => {
   const mains = STORY.events.filter((e) => e.kind !== 'side').map((e) => e.id);
   const ratios = mains.map((_, i) => storyStatus(STORY, mains.slice(0, i)).costRatio);

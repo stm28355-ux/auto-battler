@@ -7,7 +7,8 @@
 //   battle: { opponent: battlers のキー }。ないイベントは会話だけ
 //   reward: { costRatio, pieces, relics }（クリアしたときに手に入る）
 // 対戦相手のチームは、そのイベントで主人公が使えるコスト（costRatio × ボードの上限）を基準に、
-//   弱い ≒ 7割、普通 ≒ 9割、強い = 10割（まだ手に入らない駒も使う）で組む。
+//   弱い ≒ 7割、普通 ≒ 9割、強い = 10割（まだ手に入らない駒も使う）が目安。
+//   最後は node tools/story.js の勝率で合わせる（獣は効率がよいので、コストを低めにするなど）。
 
 const T = (name, board, cells, relics = []) => ({
   name,
@@ -39,7 +40,7 @@ export const CAST = {
   van: { name: 'ヴァン', icon: '👴' },
 };
 
-// 対戦相手。team はストーリー中のチーム、rematch はクリア後の「本気」のチーム（なければ team と同じ）。
+// 対戦相手。team はストーリー中のチーム、rematch はクリア後の「本気」のチーム（強い。すべての駒とコスト10割で組む）。
 // noRematch: クリア後の再戦一覧に出さない（正体を隠していたときのトールなど）
 export const BATTLERS = {
   thor: {
@@ -68,34 +69,42 @@ export const BATTLERS = {
   gald: {
     name: 'ガルド', title: '剣術部主将', icon: '🥋', tribe: 'warrior', strength: 'weak',
     team: T('剣術部', 'square', { '1,1': 'c_knight', '2,1': 'c_berserker', '3,1': 'c_squire', '2,2': 'i_sword', '1,2': 'c_squire' }, ['r_warhorn']),
+    rematch: T('剣術部 一番隊', 'square', { '1,1': 'c_berserker', '2,1': 'c_swordmaster', '3,1': 'c_berserker', '1,2': 'i_sword', '2,2': 'c_general', '3,2': 'i_sword', '1,3': 'c_squire', '2,3': 'c_squire', '3,3': 'i_shield' }, ['r_warhorn', 'r_whetstone', 'r_amulet']),
   },
   popo: {
     name: 'ポポ', title: '購買部の看板娘', icon: '🛒', tribe: 'neutral', strength: 'weak',
     team: T('購買部の品ぞろえ', 'honeycomb', { '1,2': 'c_knight', '2,1': 'c_squire', '2,3': 'i_potion', '3,2': 'c_drone', '1,4': 'c_elf', '2,5': 'c_wolf', '3,4': 'c_apprentice' }, ['r_amulet']),
+    rematch: T('購買部の目玉商品', 'honeycomb', { '1,2': 'c_dragonkin', '2,1': 'c_paladin', '3,2': 'c_lion', '2,3': 'i_armor', '1,4': 'c_turret', '2,5': 'c_pyromancer', '3,4': 'c_workshop' }, ['r_lone', 'r_amulet', 'r_heart']),
   },
   rin: {
-    name: 'リン', title: '飼育委員', icon: '🐾', tribe: 'beast', strength: 'weak',
-    team: T('飼育小屋の仲間たち', 'honeycomb', { '1,2': 'c_bear', '2,1': 'c_boar', '3,2': 'c_leopard', '2,3': 'i_banner', '1,4': 'c_lion', '2,5': 'c_wolf', '3,4': 'c_hawk' }, ['r_totem']),
+    name: 'リン', title: '飼育委員', icon: '🐾', tribe: 'beast', strength: 'normal',
+    team: T('飼育小屋の仲間たち', 'honeycomb', { '1,2': 'c_bear', '2,1': 'c_boar', '3,2': 'c_lion', '2,3': 'i_banner', '1,4': 'c_leopard', '2,5': 'c_lion', '3,4': 'c_viper' }, ['r_totem']),
+    rematch: T('毒蛇の巣', 'pentagram', { '1,3': 'i_drum', '2,1': 'c_bear', '3,1': 'c_lion', '2,2': 'c_boar', '2,3': 'c_viper', '2,4': 'c_viper', '2,5': 'c_viper', '3,2': 'c_viper', '3,3': 'c_viper', '3,4': 'c_leopard', '3,5': 'c_hawk', '4,3': 'i_banner' }, ['r_totem', 'r_hourglass', 'r_whetstone']),
   },
   sera: {
-    name: 'セラ', title: '魔術研究会 会長', icon: '🔮', tribe: 'mage', strength: 'weak',
-    team: T('魔術研究会', 'pentagram', { '2,1': 'c_knight', '2,2': 'c_oracle', '2,3': 'c_witch', '3,1': 'c_cursemaster', '3,2': 'c_apprentice', '3,3': 'c_apprentice' }, ['r_grimoire']),
+    name: 'セラ', title: '魔術研究会 会長', icon: '🔮', tribe: 'mage', strength: 'normal',
+    team: T('魔術研究会', 'pentagram', { '2,1': 'c_knight', '2,2': 'c_oracle', '2,3': 'c_witch', '2,4': 'c_apprentice', '3,1': 'c_cursemaster', '3,2': 'c_apprentice', '3,3': 'c_apprentice' }, ['r_grimoire']),
+    rematch: T('呪詛の陣', 'square', { '1,1': 'c_knight', '2,1': 'c_cursemaster', '3,1': 'c_knight', '1,2': 'c_hexer', '2,2': 'i_doll', '3,2': 'c_hexer', '1,3': 'c_witch', '2,3': 'c_archmage', '3,3': 'c_apprentice' }, ['r_grimoire', 'r_amulet', 'r_hourglass']),
   },
   bolt: {
-    name: 'ボルト', title: 'ロボット研究会 部長', icon: '🔧', tribe: 'machine', strength: 'weak',
-    team: T('ロボ研の試作機', 'square', { '1,1': 'c_golem', '2,1': 'c_reactor', '3,1': 'c_tesla', '1,2': 'c_medibot', '2,2': 'i_gear', '3,2': 'c_drone', '2,3': 'c_drone' }, ['r_gearheart']),
+    name: 'ボルト', title: 'ロボット研究会 部長', icon: '🔧', tribe: 'machine', strength: 'normal',
+    team: T('ロボ研の試作機', 'square', { '1,1': 'c_golem', '2,1': 'c_reactor', '3,1': 'c_tesla', '1,2': 'c_medibot', '2,2': 'i_gear', '3,2': 'c_drone', '1,3': 'c_turret', '2,3': 'c_drone' }, ['r_gearheart']),
+    rematch: T('ロボ研の修理工房', 'honeycomb', { '1,2': 'c_golem', '2,1': 'c_golem', '3,2': 'c_tesla', '2,3': 'c_workshop', '1,4': 'c_turret', '2,5': 'c_fighter', '3,4': 'c_fighter' }, ['r_gearheart', 'r_thunder', 'r_spring']),
   },
   zain: {
-    name: 'ザイン', title: '留学生', icon: '🧳', tribe: 'neutral', strength: 'weak',
-    team: T('異国のバトラー', 'honeycomb', { '1,2': 'c_dwarf', '2,1': 'c_squire', '3,2': 'c_boar', '2,3': 'i_sword', '1,4': 'c_vampire', '2,5': 'c_hawk', '3,4': 'c_wolf' }, ['r_lone']),
+    name: 'ザイン', title: '留学生', icon: '🧳', tribe: 'neutral', strength: 'normal',
+    team: T('異国のバトラー', 'honeycomb', { '1,2': 'c_knight', '2,1': 'c_vampire', '3,2': 'c_bear', '2,3': 'i_potion', '1,4': 'c_lion', '2,5': 'c_boar', '3,4': 'c_lion' }, ['r_lone']),
+    rematch: T('不死の夜会', 'pentagram', { '2,1': 'c_knight', '3,1': 'c_vampire', '2,2': 'c_apprentice', '2,3': 'c_hexer', '2,4': 'c_apprentice', '2,5': 'c_apprentice', '3,2': 'c_apprentice', '3,3': 'c_medibot', '3,4': 'c_apprentice', '1,3': 'i_potion', '4,3': 'i_gear' }, ['r_spring', 'r_amulet', 'r_hourglass']),
   },
   shiori: {
-    name: 'シオリ', title: '図書委員', icon: '📚', tribe: 'mage', strength: 'weak',
-    team: T('禁書の大魔術', 'pentagram', { '1,3': 'i_doll', '2,1': 'c_knight', '2,2': 'c_pyromancer', '3,1': 'c_squire', '3,2': 'c_sorcerer' }, ['r_grimoire']),
+    name: 'シオリ', title: '図書委員', icon: '📚', tribe: 'mage', strength: 'normal',
+    team: T('禁書の大魔術', 'pentagram', { '1,3': 'i_doll', '2,1': 'c_knight', '2,2': 'c_pyromancer', '2,3': 'c_apprentice', '3,1': 'c_squire', '3,2': 'c_sorcerer', '3,3': 'c_cursemaster' }, ['r_grimoire']),
+    rematch: T('禁書・第零章', 'honeycomb', { '2,1': 'c_knight', '1,2': 'c_archmage', '3,2': 'c_cursemaster', '2,3': 'c_pyromancer', '1,4': 'c_sorcerer', '3,4': 'c_sorcerer', '2,5': 'c_pyromancer' }, ['r_grimoire', 'r_amulet', 'r_whetstone']),
   },
   van: {
     name: 'ヴァン', title: '宝物庫番の老教師', icon: '👴', tribe: 'beast', strength: 'normal',
-    team: T('宝物庫の守り手', 'honeycomb', { '1,2': 'c_lion', '1,4': 'c_hawk', '2,1': 'c_bear', '2,3': 'i_blade', '2,5': 'c_leopard', '3,2': 'c_boar', '3,4': 'c_wolf' }, ['r_totem']),
+    team: T('宝物庫の守り手', 'honeycomb', { '1,2': 'c_lion', '1,4': 'c_hawk', '2,1': 'c_bear', '2,3': 'i_blade', '2,5': 'c_leopard', '3,2': 'c_boar', '3,4': 'c_wolf' }, ['r_totem', 'r_whetstone']),
+    rematch: T('宝物庫の秘蔵品', 'square', { '1,1': 'c_paladin', '2,1': 'c_behemoth', '3,1': 'c_squire', '1,2': 'c_lion', '2,2': 'i_crown', '3,2': 'c_swordmaster', '1,3': 'c_hawk', '2,3': 'i_drum' }, ['r_phalanx', 'r_amulet', 'r_whetstone']),
   },
 };
 

@@ -3,6 +3,8 @@
 //   node tools/story.js               各対戦イベントについて、そこまでに使える駒・コストでランダムなチームを組み、相手との勝率を出す
 //   node tools/story.js --teams 300   1イベントあたりのチーム数（各チームは相手と先攻・後攻で2戦）
 //
+// 続けて、クリア後の再戦（rematch。強い）を、すべての駒・コスト100%で組んだチームとの勝率で出す。
+//
 // 「最低限」はサイドイベントを1つもクリアしていないとき、「全部」はそこまでのサイドイベントを全部クリアしたとき。
 // 上位10%：ランダムに組んだチームのうち、勝率の高い1割の平均（人がちゃんと組んだときの目安）。
 import { pathToFileURL } from 'node:url';
@@ -89,6 +91,16 @@ function main() {
     const errors = validateTeam(battler.team, catalog);
     console.log(`${label} ${who} ${String(teamCost(battler.team, catalog)).padStart(3)}/${String(cap).padEnd(3)} (${BOARDS[battler.team.board].name})`
       + `   ${pct(a.mean)} ${pct(a.top)}        ${pct(b.mean)} ${pct(b.top)}${errors.length ? `  ×${errors.join(' ')}` : ''}`);
+  }
+
+  const finished = storyStatus(STORY, STORY.events.map((e) => e.id));
+  console.log('\nクリア後の再戦              チーム                  相手のコスト/上限         平均 上位10%');
+  for (const battler of Object.values(BATTLERS).filter((b) => !b.noRematch)) {
+    const team = battler.rematch ?? battler.team;
+    const r = measure(team, finished, { teams: opt('teams', 200) });
+    const errors = validateTeam(team, catalog);
+    console.log(`${battler.name.padEnd(14, '　')} ${team.name.padEnd(10, '　')} ${String(teamCost(team, catalog)).padStart(3)}/${String(storyCap(team.board, 1)).padEnd(3)} (${BOARDS[team.board].name})`
+      + `   ${pct(r.mean)} ${pct(r.top)}${errors.length ? `  ×${errors.join(' ')}` : ''}`);
   }
 }
 
