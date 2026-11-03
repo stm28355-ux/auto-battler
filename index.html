@@ -27,8 +27,8 @@
       <p id="home-notice" class="home-notice" hidden></p>
       <section class="home">
         <div class="home-side home-side--left">
-          <button type="button" class="mode-card mode-card--story" disabled>
-            <span class="mode-card-icon">📜</span><span class="mode-card-name">ストーリー</span><span class="soon">準備中</span>
+          <button type="button" class="mode-card mode-card--story" data-go="story">
+            <span class="mode-card-icon">📜</span><span class="mode-card-name">ストーリー</span><span id="home-story-note" class="soon soon--live">遊べます</span>
           </button>
           <button type="button" class="mode-card mode-card--rogue" disabled>
             <span class="mode-card-icon">🗝️</span><span class="mode-card-name">ローグライト</span><span class="soon">準備中</span>
@@ -65,12 +65,13 @@
 
     <div id="view-battle" data-mode="custom">
       <section class="panel match-setup">
-        <div class="mode-switch" role="radiogroup" aria-label="対戦モード">
+        <div id="story-bar" class="story-bar only-story"><span>📜 <strong id="story-bar-title"></strong></span><button id="story-back" type="button">ストーリーに戻る</button></div>
+        <div class="mode-switch not-story" role="radiogroup" aria-label="対戦モード">
           <label><input type="radio" name="mode" value="custom" checked> カスタム対戦</label>
           <label><input type="radio" name="mode" value="random"> ランダムマッチ</label>
         </div>
-        <label><span class="only-custom">チームA</span><span class="only-random">自分のチーム</span> <select id="team-a"></select></label>
-        <label><span class="only-custom">チームB</span><span class="only-random">対戦相手</span> <select id="team-b"></select></label>
+        <label class="not-story"><span class="only-custom">チームA</span><span class="only-random">自分のチーム</span> <select id="team-a"></select></label>
+        <label class="not-story"><span class="only-custom">チームB</span><span class="only-random">対戦相手</span> <select id="team-b"></select></label>
         <label class="only-random">強さ
           <select id="tier">
             <option value="any">おまかせ</option>
@@ -138,6 +139,7 @@
     </div>
 
     <div id="view-team" hidden>
+      <div id="team-context" class="panel team-context" hidden></div>
       <div class="editor-grid">
         <aside class="editor-side">
           <section class="panel">
@@ -149,7 +151,7 @@
               <button id="team-delete" type="button">削除</button>
             </div>
           </section>
-          <section class="panel">
+          <section id="team-json-panel" class="panel">
             <h3>JSON</h3>
             <div class="buttons buttons--wrap">
               <button id="json-download" type="button">ファイルに書き出す</button>
@@ -229,6 +231,10 @@
 
         <section id="piece-form" class="editor-main"></section>
       </div>
+    </div>
+
+    <div id="view-story" hidden>
+      <div id="story-root" class="story"></div>
     </div>
 
     <div id="view-rules" hidden>

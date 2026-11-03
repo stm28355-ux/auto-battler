@@ -13,8 +13,10 @@ export const teamKey = (envId) => (envId === 'v1' ? LEGACY_KEY : `auto-battler.t
 export { memoryStorage };
 
 // 保存スロットが SLOT_COUNT 個あるチーム保存庫。壊れたデータは空きスロットとして扱う。
-export function createTeamStore(storage = defaultStorage(LEGACY_KEY), envId = activeEnvironment().id) {
-  const KEY = teamKey(envId);
+// key・slots を渡すと、別の保存先・スロット数にできる（ストーリー用の編成）
+export function createTeamStore(storage = defaultStorage(LEGACY_KEY), envId = activeEnvironment().id, { key, slots = SLOT_COUNT } = {}) {
+  const KEY = key ?? teamKey(envId);
+  const SLOTS = slots;
   const read = () => {
     let raw = [];
     try {
@@ -23,7 +25,7 @@ export function createTeamStore(storage = defaultStorage(LEGACY_KEY), envId = ac
     } catch {
       // 壊れた保存データは無視する
     }
-    return Array.from({ length: SLOT_COUNT }, (_, i) => sanitizeTeam(raw[i]).team);
+    return Array.from({ length: SLOTS }, (_, i) => sanitizeTeam(raw[i]).team);
   };
   const write = (slots) => {
     try {
@@ -33,7 +35,7 @@ export function createTeamStore(storage = defaultStorage(LEGACY_KEY), envId = ac
       return false; // 容量超過など
     }
   };
-  const validIndex = (i) => Number.isInteger(i) && i >= 0 && i < SLOT_COUNT;
+  const validIndex = (i) => Number.isInteger(i) && i >= 0 && i < SLOTS;
 
   return {
     load: read,

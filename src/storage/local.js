@@ -4,6 +4,7 @@ export function memoryStorage() {
   return {
     getItem: (k) => data.get(k) ?? null,
     setItem: (k, v) => void data.set(k, String(v)),
+    removeItem: (k) => void data.delete(k),
   };
 }
 

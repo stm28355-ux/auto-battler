@@ -44,7 +44,10 @@ export function activeSynergies(team, catalog) {
 }
 
 // エラーメッセージの配列を返す。空なら対戦に出せるチーム。
-export function validateTeam(team, catalog) {
+// rules を渡すと、ふつうのルールに加えて制限をかける（ストーリーモード。src/story/progress.js）
+//   costCap(boardId): コスト上限（省略するとボードの上限）
+//   pieces / relics: 使える駒・遺物のIDの Set（省略すると全部）。自作駒は pieces に入っていなければ使えない
+export function validateTeam(team, catalog, rules = null) {
   const board = BOARDS[team?.board];
   if (!board) return [`ボードが不正です（${team?.board}）`];
   const errors = [];
@@ -60,7 +63,15 @@ export function validateTeam(team, catalog) {
     errors.push('キャラクターを1体以上配置してください');
   }
   const cost = teamCost(team, catalog);
-  if (cost > board.costCap) errors.push(`コストが上限を超えています（${cost} / ${board.costCap}）`);
+  const cap = rules?.costCap ? rules.costCap(board.id) : board.costCap;
+  if (cost > cap) errors.push(`コストが上限を超えています（${cost} / ${cap}）`);
+  if (rules?.pieces) {
+    const locked = [...new Set((team.slots ?? []).map((s) => s.pieceId).filter((id) => !rules.pieces.has(id)))];
+    for (const id of locked) errors.push(`まだ使えない駒です（${catalog.piece(id)?.name ?? id}）`);
+  }
+  if (rules?.relics) {
+    for (const id of team.relics ?? []) if (!rules.relics.has(id)) errors.push(`まだ使えない遺物です（${catalog.relic(id)?.name ?? id}）`);
+  }
   const relics = team.relics ?? [];
   if (relics.length > MAX_RELICS) errors.push(`遺物は${MAX_RELICS}つまでです`);
   if (new Set(relics).size !== relics.length) errors.push('同じ遺物は重複して持てません');

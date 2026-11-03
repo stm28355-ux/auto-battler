@@ -18,7 +18,8 @@ const shuffle = (list, rng) => {
 //   1マスに使うコストは、「残りの予算 ÷ 残りのマス数」のまわり（spread 倍まで、floor 倍以上）にする。
 //   高い駒で予算を使い切って空きマスだらけになったり、安い駒ばかりで予算が余ったりして、
 //   ボードごとの予算の使い方に差が出ないようにするため。遺物は0〜3個。
-export function randomTeam(boardId, pieces, rng, { itemRate = 0.3, spread = 1.4, floor = 0.7 } = {}) {
+//   costCap: コスト上限（省略するとボードの上限）。relicPool: 選べる遺物（省略するとすべて）
+export function randomTeam(boardId, pieces, rng, { itemRate = 0.3, spread = 1.4, floor = 0.7, costCap, relicPool = RELICS } = {}) {
   const board = BOARDS[boardId];
   const costs = new Map(pieces.map((p) => [p.id, pieceCost(p)]));
   const byKind = (kind) => pieces.filter((p) => p.kind === kind);
@@ -29,7 +30,7 @@ export function randomTeam(boardId, pieces, rng, { itemRate = 0.3, spread = 1.4,
   const itemCells = cells.slice(cells.length - itemCount);
 
   const slots = [];
-  let budget = board.costCap;
+  let budget = costCap ?? board.costCap;
   const pick = (kind, min, max) => {
     const fits = byKind(kind).filter((p) => costs.get(p.id) <= Math.min(budget, max) && costs.get(p.id) >= min);
     return fits.length ? fits[Math.floor(rng() * fits.length)] : null;
@@ -84,6 +85,6 @@ export function randomTeam(boardId, pieces, rng, { itemRate = 0.3, spread = 1.4,
   }
 
   // 遺物はコストを使わないので、いつも上限まで持つ
-  const relics = shuffle(RELICS, rng).slice(0, MAX_RELICS).map((r) => r.id);
+  const relics = shuffle(relicPool, rng).slice(0, MAX_RELICS).map((r) => r.id);
   return { name: 'ランダム', board: boardId, slots, relics };
 }

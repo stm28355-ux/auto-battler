@@ -3,9 +3,8 @@ import { activeEnvironment, findEnvironment } from '../data/environment.js';
 import { RELICS } from '../data/relics.js';
 import { createCatalog } from '../core/catalog.js';
 import { pieceCost } from '../core/cost.js';
-import { MAX_RELICS, teamCost } from '../core/team.js';
+import { MAX_RELICS, teamCost, validateTeam } from '../core/team.js';
 import { BUILTIN_IDS, exportTeamJson, MAX_JSON_CHARS, MAX_NAME, parseTeamJson } from '../storage/teamJson.js';
-import { SLOT_COUNT } from '../storage/teamStore.js';
 import { renderBoard } from './boardView.js';
 import { TRIBES } from '../data/tribes.js';
 import { $, effectsText, escapeHtml, pieceSummary, tribeTag } from './format.js';
@@ -18,7 +17,12 @@ const DIRTY_CONFIRM = '未保存の変更があります。破棄しますか？
 const blankTeam = () => ({ name: '新しいチーム', board: 'square', slots: [], relics: [] });
 
 // 「チーム編成」タブ：駒を選んでマスに置き、9つのスロットに保存する。JSONの入出力にも対応。
+// setContext で「ストーリー用の編成」に切り替えられる（保存先・コスト上限・使える駒と遺物が変わり、自作駒とJSONは使わない）。
+//   context: { label, store, rules(): validateTeam の制限, onBack(): 戻る }。null なら通常の編成
 export function initTeamEditor({ store, pieceStore }) {
+  let context = null;
+  const activeStore = () => context?.store ?? store;
+  const rules = () => context?.rules() ?? null;
   let draft = blankTeam();
   let slot = 0; // 保存先のスロット
   let loadedSlot = null; // 今の編集内容を読み込んだスロット
@@ -30,6 +34,7 @@ export function initTeamEditor({ store, pieceStore }) {
   // 自作駒は、置いた時点の内容をチームにコピーして持たせる（draft.customPieces）。
   // 駒作成で後から直しても、保存済みのチームは勝手に変わらない。
   const pool = () => {
+    if (context) return []; // ストーリーでは自作駒を使わない
     const byId = new Map(myPieces.map((p) => [p.id, p]));
     for (const p of draft.customPieces ?? []) byId.set(p.id, p);
     return [...byId.values()];
@@ -74,17 +79,33 @@ export function initTeamEditor({ store, pieceStore }) {
     $('team-delete').disabled = !saved[slot];
   }
 
+  const capOf = (boardId) => rules()?.costCap(boardId) ?? BOARDS[boardId].costCap;
+
   function renderHead() {
-    const board = BOARDS[draft.board];
+    const cap = capOf(draft.board);
     const cost = teamCost(draft, catalog());
     if (document.activeElement !== $('team-name')) $('team-name').value = draft.name;
+    $('team-board').innerHTML = Object.values(BOARDS)
+      .map((b) => `<option value="${b.id}">${b.name}（${b.cells.length}マス・上限${capOf(b.id)}）</option>`).join('');
     $('team-board').value = draft.board;
-    $('cost-text').textContent = `コスト ${cost} / ${board.costCap}`;
-    $('cost-text').classList.toggle('over', cost > board.costCap);
-    $('cost-bar').max = board.costCap;
-    $('cost-bar').value = Math.min(cost, board.costCap);
-    $('cost-bar').classList.toggle('over', cost > board.costCap);
+    $('cost-text').textContent = `コスト ${cost} / ${cap}`;
+    $('cost-text').classList.toggle('over', cost > cap);
+    $('cost-bar').max = cap;
+    $('cost-bar').value = Math.min(cost, cap);
+    $('cost-bar').classList.toggle('over', cost > cap);
     $('team-dirty').hidden = !dirty();
+  }
+
+  // ストーリー用の編成のときだけ、上に案内と、いまの条件で使えるかを出す
+  function renderContext() {
+    $('team-context').hidden = !context;
+    $('team-json-panel').hidden = !!context;
+    if (!context) return;
+    const errors = draft.slots.length ? validateTeam(draft, catalog(), rules()) : [];
+    $('team-context').innerHTML = `<div><strong>📜 ${escapeHtml(context.label)}</strong>`
+      + `<span class="muted">（通常の編成とは別に保存されます。使えるのは、ストーリーで手に入れた駒・遺物だけです）</span></div>`
+      + (errors.length ? `<ul class="errors">${errors.map((e) => `<li>${escapeHtml(e)}</li>`).join('')}</ul>` : '')
+      + '<button type="button" id="team-context-back">📜 ストーリーに戻る</button>';
   }
 
   function showHover(pos, piece) {
@@ -132,7 +153,8 @@ export function initTeamEditor({ store, pieceStore }) {
       + `${escapeHtml(p.icon)} ${escapeHtml(p.name)} <span class="cost">${pieceCost(p)}</span></button>`;
     // データ一覧と同じ並び：種族 → コスト → HP（道具はコスト順）
     const byCost = (a, b) => pieceCost(a) - pieceCost(b) || (a.hp ?? 0) - (b.hp ?? 0);
-    const all = cat.pieces();
+    const allowed = rules()?.pieces;
+    const all = cat.pieces().filter((p) => !allowed || allowed.has(p.id));
     const tribeRows = Object.entries(TRIBES).map(([id, t]) => {
       const list = all.filter((p) => p.kind === 'character' && p.tribe === id).sort(byCost);
       const tiers = Object.keys(t.bonuses).join('/');
@@ -150,7 +172,10 @@ export function initTeamEditor({ store, pieceStore }) {
       ? `<div class="palette-note">⚠ 自作駒 ${stale.map((p) => `「${escapeHtml(p.name)}」`).join('')}に、駒作成で更新された新しい版があります。`
         + ' <button type="button" data-update>最新版に更新</button></div>'
       : '';
-    $('palette').innerHTML = note + tribeRows + row('道具', 'item')
+    const lockedNote = allowed
+      ? `<div class="palette-note">ストーリーで手に入れた駒だけを表示しています（${all.length} / ${cat.pieces().length}）</div>`
+      : '';
+    $('palette').innerHTML = lockedNote + note + tribeRows + row('道具', 'item')
       + `<div class="palette-row"><span class="palette-label">その他</span>`
       + `<button type="button" class="piece-btn${tool === ERASER ? ' selected' : ''}" data-id="${ERASER}">🧹 消す</button>`
       + '<span class="muted">マスの右クリックでも消せます</span></div>';
@@ -159,7 +184,8 @@ export function initTeamEditor({ store, pieceStore }) {
   function renderRelics() {
     const full = draft.relics.length >= MAX_RELICS;
     $('relic-count').textContent = `${draft.relics.length} / ${MAX_RELICS}`;
-    $('relic-picker').innerHTML = RELICS.map((r) => {
+    const allowed = rules()?.relics;
+    $('relic-picker').innerHTML = RELICS.filter((r) => !allowed || allowed.has(r.id)).map((r) => {
       const on = draft.relics.includes(r.id);
       return `<button type="button" class="relic-btn${on ? ' selected' : ''}" data-id="${r.id}"${full && !on ? ' disabled' : ''}>`
         + `<strong>${r.icon} ${escapeHtml(r.name)}</strong><span class="muted">${effectsText(r.effects)}</span></button>`;
@@ -167,6 +193,7 @@ export function initTeamEditor({ store, pieceStore }) {
   }
 
   function render() {
+    renderContext();
     renderSlots();
     renderHead();
     renderBoardArea();
@@ -216,6 +243,7 @@ export function initTeamEditor({ store, pieceStore }) {
     renderRelics();
     renderBoardArea();
     renderHead();
+    renderContext();
   });
 
   $('team-name').addEventListener('input', () => {
@@ -223,8 +251,6 @@ export function initTeamEditor({ store, pieceStore }) {
     $('team-dirty').hidden = !dirty();
   });
 
-  $('team-board').innerHTML = Object.values(BOARDS)
-    .map((b) => `<option value="${b.id}">${b.name}（${b.cells.length}マス・上限${b.costCap}）</option>`).join('');
   $('team-board').addEventListener('change', () => {
     const next = $('team-board').value;
     const kept = draft.slots.filter((s) => isCell(next, s.pos));
@@ -244,11 +270,11 @@ export function initTeamEditor({ store, pieceStore }) {
     draft.name = draft.name.trim().slice(0, MAX_NAME) || '名無しのチーム';
     if (saved[slot] && slot !== loadedSlot
       && !window.confirm(`スロット${slot + 1}「${saved[slot].name}」を上書きしますか？`)) return;
-    if (!store.save(slot, draft)) {
+    if (!activeStore().save(slot, draft)) {
       setMessage('error', '保存できませんでした（ブラウザの保存領域がいっぱいか、使えない設定です）');
       return;
     }
-    saved = store.load();
+    saved = activeStore().load();
     loadedSlot = slot;
     baseline = JSON.stringify(draft);
     render();
@@ -257,8 +283,8 @@ export function initTeamEditor({ store, pieceStore }) {
 
   $('team-delete').addEventListener('click', () => {
     if (!saved[slot] || !window.confirm(`スロット${slot + 1}「${saved[slot].name}」を削除しますか？`)) return;
-    store.remove(slot);
-    saved = store.load();
+    activeStore().remove(slot);
+    saved = activeStore().load();
     if (loadedSlot === slot) {
       loadedSlot = null;
       baseline = '';
@@ -326,11 +352,35 @@ export function initTeamEditor({ store, pieceStore }) {
     $('json-text').value = '';
   });
 
+  $('team-context').addEventListener('click', (ev) => {
+    if (ev.target.closest('#team-context-back')) context?.onBack();
+  });
+
   render();
   setMessage('info', '');
 
   return {
     isDirty: dirty,
+    // 通常の編成とストーリー用の編成を切り替える。未保存の変更を破棄しないと決めたら false
+    setContext(next) {
+      if (next?.store === context?.store) {
+        if (next) context = next;
+        render();
+        return true;
+      }
+      if (!confirmDiscard()) return false;
+      context = next;
+      saved = activeStore().load();
+      const first = saved.findIndex(Boolean);
+      if (first >= 0) loadDraft(saved[first], { fromSlot: first });
+      else {
+        slot = 0;
+        loadDraft(blankTeam());
+        baseline = JSON.stringify(draft);
+        render();
+      }
+      return true;
+    },
     // 他のタブから戻ったときに、自作駒を読み直す
     refresh() {
       myPieces = pieceStore.load();
