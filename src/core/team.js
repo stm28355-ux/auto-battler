@@ -44,9 +44,11 @@ export function activeSynergies(team, catalog) {
 }
 
 // エラーメッセージの配列を返す。空なら対戦に出せるチーム。
-// rules を渡すと、ふつうのルールに加えて制限をかける（ストーリーモード。src/story/progress.js）
-//   costCap(boardId): コスト上限（省略するとボードの上限）
+// rules を渡すと、ふつうのルールに加えて制限をかける（ストーリーモード src/story/progress.js、ローグライト src/rogue/）
+//   costCap(boardId): コスト上限（省略するとボードの上限。Infinity なら上限なし）
 //   pieces / relics: 使える駒・遺物のIDの Set（省略すると全部）。自作駒は pieces に入っていなければ使えない
+//   pieceCounts: 駒ごとに置ける数の Map（ローグライト。持っている数まで）
+//   maxRelics: 遺物の数の上限（省略すると MAX_RELICS）。duplicateRelics: 同じ遺物を重ねて持てるか
 export function validateTeam(team, catalog, rules = null) {
   const board = BOARDS[team?.board];
   if (!board) return [`ボードが不正です（${team?.board}）`];
@@ -69,12 +71,22 @@ export function validateTeam(team, catalog, rules = null) {
     const locked = [...new Set((team.slots ?? []).map((s) => s.pieceId).filter((id) => !rules.pieces.has(id)))];
     for (const id of locked) errors.push(`まだ使えない駒です（${catalog.piece(id)?.name ?? id}）`);
   }
+  if (rules?.pieceCounts) {
+    const used = new Map();
+    for (const s of team.slots ?? []) used.set(s.pieceId, (used.get(s.pieceId) ?? 0) + 1);
+    for (const [id, n] of used) {
+      const have = rules.pieceCounts.get(id) ?? 0;
+      const name = catalog.piece(id)?.name ?? id;
+      if (n > have) errors.push(have ? `持っている数より多く置いています（${name} ${n} / ${have}）` : `持っていない駒です（${name}）`);
+    }
+  }
   if (rules?.relics) {
     for (const id of team.relics ?? []) if (!rules.relics.has(id)) errors.push(`まだ使えない遺物です（${catalog.relic(id)?.name ?? id}）`);
   }
   const relics = team.relics ?? [];
-  if (relics.length > MAX_RELICS) errors.push(`遺物は${MAX_RELICS}つまでです`);
-  if (new Set(relics).size !== relics.length) errors.push('同じ遺物は重複して持てません');
+  const maxRelics = rules?.maxRelics ?? MAX_RELICS;
+  if (relics.length > maxRelics) errors.push(`遺物は${maxRelics}つまでです`);
+  if (!rules?.duplicateRelics && new Set(relics).size !== relics.length) errors.push('同じ遺物は重複して持てません');
   for (const id of relics) if (!catalog.relic(id)) errors.push(`遺物が見つかりません（${id}）`);
   return errors;
 }

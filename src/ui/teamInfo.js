@@ -18,10 +18,12 @@ function rowTable(units, boardId, foeBoardId, title) {
 }
 
 // チームの概要（コスト・ルール違反・前線・シナジー・遺物）をHTMLで返す。
-export function teamInfoHtml(team, catalog, { heading = true } = {}) {
+// rules: validateTeam の制限（ストーリー・ローグライト）。コストの上限もここから取る
+export function teamInfoHtml(team, catalog, { heading = true, rules = null } = {}) {
   const board = BOARDS[team.board];
   const cost = teamCost(team, catalog);
-  const errors = validateTeam(team, catalog);
+  const cap = rules?.costCap ? rules.costCap(board.id) : board.costCap;
+  const errors = validateTeam(team, catalog, rules);
   const byPos = new Map(team.slots.map((s) => [posKey(s.pos), catalog.piece(s.pieceId)]));
   const fronts = [...frontLiners(team, catalog)]
     .map(([row, pos]) => `<li>${row}行目: (${pos.join(',')}) ${escapeHtml(byPos.get(posKey(pos)).name)}</li>`)
@@ -29,8 +31,11 @@ export function teamInfoHtml(team, catalog, { heading = true } = {}) {
   const synergies = activeSynergies(team, catalog)
     .map((s) => `<li>${tribeTag(s.tribe)} ${s.count}体 → ${s.effects.map(describeEffect).join('、')}</li>`)
     .join('') || '<li>なし</li>';
-  const relics = (team.relics ?? []).map((id) => catalog.relic(id)).filter(Boolean)
-    .map((r) => `<li>${r.icon} ${escapeHtml(r.name)}: ${effectsText(r.effects)}</li>`).join('') || '<li>なし</li>';
+  // 同じ遺物を重ねたとき（ローグライト）は「×数」でまとめる
+  const relicCounts = new Map();
+  for (const id of team.relics ?? []) if (catalog.relic(id)) relicCounts.set(id, (relicCounts.get(id) ?? 0) + 1);
+  const relics = [...relicCounts].map(([id, n]) => [catalog.relic(id), n])
+    .map(([r, n]) => `<li>${r.icon} ${escapeHtml(r.name)}${n > 1 ? ` ×${n}` : ''}: ${effectsText(r.effects)}</li>`).join('') || '<li>なし</li>';
 
   const units = resolveTeam(team, catalog).units;
   const rowParams = team.board === 'pentagram'
@@ -39,7 +44,7 @@ export function teamInfoHtml(team, catalog, { heading = true } = {}) {
 
   return `
     ${heading ? `<h3>${escapeHtml(team.name)}</h3>` : ''}
-    <p>${board.name} ／ コスト <strong class="${cost > board.costCap ? 'over' : ''}">${cost} / ${board.costCap}</strong></p>
+    <p>${board.name} ／ コスト <strong class="${cost > cap ? 'over' : ''}">${cost} / ${Number.isFinite(cap) ? cap : '上限なし'}</strong></p>
     ${errors.length ? `<ul class="errors">${errors.map((e) => `<li>${escapeHtml(e)}</li>`).join('')}</ul>` : '<p class="ok">対戦に使えます</p>'}
     <h4>前線</h4><ul>${fronts}</ul>
     <h4>行ごとの秒間パラメータ</h4>

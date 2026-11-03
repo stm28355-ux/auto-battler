@@ -48,6 +48,9 @@ export function initBattleScreen({ getTeams }) {
   let mode = 'custom'; // 'custom'（カスタム対戦）/ 'random'（ランダムマッチ）/ 'story'（ストーリーモード）
   let opponent = null; // ランダムマッチで引いた相手
   // ストーリーモードの対戦：{ teams: { a, b }, rules, title, onFinish(result), onBack() }（src/ui/story.js）
+  //   ローグライト（src/ui/rogue.js）も同じ仕組みで使う。追加で
+  //   rulesB: 相手のチームの制限、icon / backLabel: 上の帯の表示、canRetry(): 負けたときに「もう一度戦う」を出すか、
+  //   onStart(seed): 対戦を始めたとき（結果が出る前にページを閉じたときのため）
   let storyMatch = null;
   const record = createRecord();
 
@@ -91,7 +94,7 @@ export function initBattleScreen({ getTeams }) {
     game = null;
     const picked = mode === 'story' ? storyMatch.teams : { a: entryOf('a').team, b: entryOf('b').team };
     const catalog = createCatalog(SIDES.flatMap((k) => picked[k].customPieces ?? []));
-    const rulesOf = (k) => (mode === 'story' && k === 'a' ? storyMatch.rules : null);
+    const rulesOf = (k) => (mode !== 'story' ? null : k === 'a' ? storyMatch.rules : storyMatch.rulesB ?? null);
     const errors = SIDES.flatMap((k) => validateTeam(picked[k], catalog, rulesOf(k)).map((e) => `チーム${k.toUpperCase()}: ${e}`));
     $('setup-errors').innerHTML = errors.map((e) => `<li>${escapeHtml(e)}</li>`).join('');
     if (errors.length) {
@@ -252,8 +255,9 @@ export function initBattleScreen({ getTeams }) {
     if (game.mode === 'story' && !game.recorded) {
       game.recorded = true;
       storyMatch.onFinish(game.battle.state.result);
-      $('result').insertAdjacentHTML('beforeend', '<div class="buttons story-after"><button type="button" class="primary" data-story-back>📜 ストーリーに戻る</button>'
-        + (game.battle.state.result.winner === 'a' ? '' : '<button type="button" data-story-retry>もう一度戦う</button>') + '</div>');
+      const retry = game.battle.state.result.winner !== 'a' && (storyMatch.canRetry?.() ?? true);
+      $('result').insertAdjacentHTML('beforeend', `<div class="buttons story-after"><button type="button" class="primary" data-story-back>${escapeHtml(storyMatch.backLabel ?? '📜 ストーリーに戻る')}</button>`
+        + (retry ? '<button type="button" data-story-retry>もう一度戦う</button>' : '') + '</div>');
     }
     if (game.mode === 'random' && !game.recorded) {
       game.recorded = true;
@@ -283,7 +287,8 @@ export function initBattleScreen({ getTeams }) {
     $('view-battle').dataset.mode = next;
     $('team-b').disabled = next === 'random';
     if (next === 'story') {
-      $('story-bar-title').textContent = storyMatch.title;
+      $('story-bar-title').textContent = `${storyMatch.icon ?? '📜'} ${storyMatch.title}`;
+      $('story-back').textContent = storyMatch.backLabel ?? '📜 ストーリーに戻る';
       prepare();
       return;
     }
@@ -319,7 +324,9 @@ export function initBattleScreen({ getTeams }) {
   $('start').addEventListener('click', () => {
     // ランダムマッチは、戦うたびに新しいシード（同じ相手でも毎回違う展開になる）
     if (mode === 'random' || mode === 'story') $('seed').value = String(Math.floor(Math.random() * 1e6));
-    if (prepare()) play();
+    if (!prepare()) return;
+    if (mode === 'story') storyMatch.onStart?.(seed());
+    play();
   });
   for (const radio of document.querySelectorAll('input[name="mode"]')) {
     radio.addEventListener('change', () => radio.checked && setMode(radio.value));

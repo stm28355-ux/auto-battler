@@ -1,5 +1,6 @@
 import { ENVIRONMENTS, LATEST, applyEnvironment } from './data/environment.js';
 import { STORY_KEY, STORY_SLOTS, STORY_TEAMS_KEY } from './story/progress.js';
+import { ROGUE_META_KEY } from './rogue/config.js';
 import { defaultStorage } from './storage/local.js';
 import { createPieceStore } from './storage/pieceStore.js';
 import { copyTeamsOnce, createTeamStore, listBattleTeams, teamKey } from './storage/teamStore.js';
@@ -7,6 +8,7 @@ import { initBattleScreen } from './ui/battleScreen.js';
 import { initDataView } from './ui/dataView.js';
 import { initHome } from './ui/home.js';
 import { initPieceEditor } from './ui/pieceEditor.js';
+import { initRogue } from './ui/rogue.js';
 import { initRules } from './ui/rules.js';
 import { initStory } from './ui/story.js';
 import { initTeamEditor } from './ui/teamEditor.js';
@@ -29,6 +31,13 @@ const battle = initBattleScreen({ getTeams: battleTeams });
 const teamEditor = initTeamEditor({ store, pieceStore });
 const pieceEditor = initPieceEditor({ store: pieceStore });
 initDataView();
+// ストーリー・ローグライトは最新の環境で遊ぶ。最新の環境に切り替えて、そのモードを開き直す
+const switchToLatest = (hash) => () => {
+  if (teamEditor.isDirty() && !window.confirm('編集中の内容は失われます。よろしいですか？')) return;
+  envStorage.setItem(ENV_KEY, LATEST.id);
+  location.hash = hash;
+  location.reload();
+};
 // ストーリーモード。編成は通常の保存チームとは別（spec §14）
 const storyTeams = createTeamStore(defaultStorage(STORY_TEAMS_KEY), env.id, { key: STORY_TEAMS_KEY, slots: STORY_SLOTS });
 const story = initStory({
@@ -38,12 +47,16 @@ const story = initStory({
   storage: defaultStorage(STORY_KEY),
   env,
   latest: LATEST,
-  switchToLatest: () => {
-    if (teamEditor.isDirty() && !window.confirm('編集中の内容は失われます。よろしいですか？')) return;
-    envStorage.setItem(ENV_KEY, LATEST.id);
-    location.hash = '#story';
-    location.reload();
-  },
+  switchToLatest: switchToLatest('#story'),
+});
+// ローグライト。編成は挑戦ごと（spec §15）
+const rogue = initRogue({
+  go: (view, mode) => go(view, mode),
+  battle,
+  storage: defaultStorage(ROGUE_META_KEY),
+  env,
+  latest: LATEST,
+  switchToLatest: switchToLatest('#rogue'),
 });
 initRules({ go: (view) => go(view) });
 const home = initHome({
@@ -58,7 +71,7 @@ const home = initHome({
   go: (view, mode) => go(view, mode),
 });
 
-const TITLES = { home: '', story: 'ストーリー', battle: '対戦', team: 'チーム編成', piece: '駒作成', data: '図鑑', rules: 'ルール' };
+const TITLES = { home: '', story: 'ストーリー', rogue: 'ローグライト', battle: '対戦', team: 'チーム編成', piece: '駒作成', data: '図鑑', rules: 'ルール' };
 const tabs = [...document.querySelectorAll('.tab')];
 const onShow = {
   home: () => home.refresh(), // 保存したチーム・戦績を反映
@@ -66,12 +79,14 @@ const onShow = {
   team: () => teamEditor.refresh(), // 駒作成で作った駒を反映
   piece: () => pieceEditor.refresh(),
   story: () => story.show(),
+  rogue: () => rogue.show(),
 };
 
 function showView(name, mode) {
   const view = Object.hasOwn(TITLES, name) ? name : 'home';
-  // チーム編成は、ストーリーから開いたときだけストーリー用の編成にする（未保存の変更を残すと決めたら開かない）
-  if (view === 'team' && !teamEditor.setContext(mode === 'story' ? story.editorContext() : null)) return null;
+  // チーム編成は、ストーリー・ローグライトから開いたときだけその編成にする（未保存の変更を残すと決めたら開かない）
+  const context = mode === 'story' ? story.editorContext() : mode === 'rogue' ? rogue.editorContext() : null;
+  if (view === 'team' && !teamEditor.setContext(context)) return null;
   for (const tab of tabs) tab.setAttribute('aria-selected', String(tab.dataset.view === view));
   for (const id of Object.keys(TITLES)) document.getElementById(`view-${id}`).hidden = id !== view;
   document.getElementById('view-title').textContent = TITLES[view];

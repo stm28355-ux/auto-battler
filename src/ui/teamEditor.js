@@ -17,8 +17,9 @@ const DIRTY_CONFIRM = '未保存の変更があります。破棄しますか？
 const blankTeam = () => ({ name: '新しいチーム', board: 'square', slots: [], relics: [] });
 
 // 「チーム編成」タブ：駒を選んでマスに置き、9つのスロットに保存する。JSONの入出力にも対応。
-// setContext で「ストーリー用の編成」に切り替えられる（保存先・コスト上限・使える駒と遺物が変わり、自作駒とJSONは使わない）。
-//   context: { label, store, rules(): validateTeam の制限, onBack(): 戻る, onSaved(slot): 保存したとき, preferredSlot(): 開くときのスロット }。null なら通常の編成
+// setContext で「ストーリー用の編成」「ローグライトの編成」に切り替えられる（保存先・コスト上限・使える駒と遺物が変わり、自作駒とJSONは使わない）。
+//   context: { label, store, rules(): validateTeam の制限, onBack(): 戻る, onSaved(slot): 保存したとき, preferredSlot(): 開くときのスロット,
+//              icon / note / paletteNote / backLabel: 表示の文言, board: 変えられないボード, fixedRelics(): 自動でつく遺物（選べない） }。null なら通常の編成
 export function initTeamEditor({ store, pieceStore }) {
   let context = null;
   const activeStore = () => context?.store ?? store;
@@ -56,8 +57,15 @@ export function initTeamEditor({ store, pieceStore }) {
       : escapeHtml(list[0] ?? '');
   }
 
+  // 場面で決まっている部分（ボード・遺物）を合わせる
+  const fixup = (team) => {
+    if (context?.board) team.board = context.board;
+    if (context?.fixedRelics) team.relics = context.fixedRelics();
+    return team;
+  };
+
   function loadDraft(team, { fromSlot = null, message = null } = {}) {
-    draft = structuredClone(team);
+    draft = fixup(structuredClone(team));
     loadedSlot = fromSlot;
     baseline = fromSlot === null ? '' : JSON.stringify(draft);
     if (fromSlot !== null) slot = fromSlot;
@@ -80,32 +88,34 @@ export function initTeamEditor({ store, pieceStore }) {
   }
 
   const capOf = (boardId) => rules()?.costCap(boardId) ?? BOARDS[boardId].costCap;
+  const capText = (cap) => (Number.isFinite(cap) ? String(cap) : 'なし');
 
   function renderHead() {
     const cap = capOf(draft.board);
     const cost = teamCost(draft, catalog());
     if (document.activeElement !== $('team-name')) $('team-name').value = draft.name;
     $('team-board').innerHTML = Object.values(BOARDS)
-      .map((b) => `<option value="${b.id}">${b.name}（${b.cells.length}マス・上限${capOf(b.id)}）</option>`).join('');
+      .map((b) => `<option value="${b.id}">${b.name}（${b.cells.length}マス・上限${capText(capOf(b.id))}）</option>`).join('');
     $('team-board').value = draft.board;
-    $('cost-text').textContent = `コスト ${cost} / ${cap}`;
+    $('team-board').disabled = !!context?.board;
+    $('cost-text').textContent = Number.isFinite(cap) ? `コスト ${cost} / ${cap}` : `コスト ${cost}（上限なし）`;
     $('cost-text').classList.toggle('over', cost > cap);
-    $('cost-bar').max = cap;
+    $('cost-bar').max = Number.isFinite(cap) ? cap : Math.max(1, cost);
     $('cost-bar').value = Math.min(cost, cap);
     $('cost-bar').classList.toggle('over', cost > cap);
     $('team-dirty').hidden = !dirty();
   }
 
-  // ストーリー用の編成のときだけ、上に案内と、いまの条件で使えるかを出す
+  // ストーリー・ローグライトの編成のときだけ、上に案内と、いまの条件で使えるかを出す
   function renderContext() {
     $('team-context').hidden = !context;
     $('team-json-panel').hidden = !!context;
     if (!context) return;
     const errors = draft.slots.length ? validateTeam(draft, catalog(), rules()) : [];
-    $('team-context').innerHTML = `<div><strong>📜 ${escapeHtml(context.label)}</strong>`
-      + `<span class="muted">（通常の編成とは別に保存されます。使えるのは、ストーリーで手に入れた駒・遺物だけです）</span></div>`
+    $('team-context').innerHTML = `<div><strong>${escapeHtml(context.icon ?? '📜')} ${escapeHtml(context.label)}</strong>`
+      + `<span class="muted">（${escapeHtml(context.note ?? '通常の編成とは別に保存されます。使えるのは、ストーリーで手に入れた駒・遺物だけです')}）</span></div>`
       + (errors.length ? `<ul class="errors">${errors.map((e) => `<li>${escapeHtml(e)}</li>`).join('')}</ul>` : '')
-      + '<button type="button" id="team-context-back">📜 ストーリーに戻る</button>';
+      + `<button type="button" id="team-context-back">${escapeHtml(context.backLabel ?? '📜 ストーリーに戻る')}</button>`;
   }
 
   function showHover(pos, piece) {
@@ -117,6 +127,12 @@ export function initTeamEditor({ store, pieceStore }) {
   function placePiece(pos) {
     if (!tool) return;
     const key = posKey(pos);
+    // ローグライト：持っている数より多くは置けない
+    const have = rules()?.pieceCounts?.get(tool);
+    if (tool !== ERASER && have !== undefined && draft.slots.filter((s) => s.pieceId === tool && posKey(s.pos) !== key).length >= have) {
+      setMessage('error', `${catalog().piece(tool)?.name ?? tool}は、持っている数（${have}個）まで置いています`);
+      return;
+    }
     draft.slots = draft.slots.filter((s) => posKey(s.pos) !== key);
     if (tool !== ERASER) {
       draft.slots.push({ pos, pieceId: tool });
@@ -142,18 +158,22 @@ export function initTeamEditor({ store, pieceStore }) {
       onContext: removePiece,
     });
     $('edit-board').replaceChildren(svg);
-    $('edit-info').innerHTML = teamInfoHtml(draft, catalog(), { heading: false });
+    $('edit-info').innerHTML = teamInfoHtml(draft, catalog(), { heading: false, rules: rules() });
   }
 
   function renderPalette() {
     const cat = catalog();
     const plain = (s) => s.replace(/<[^>]*>/g, ' ').replace(/&#\d+;/g, '');
-    const button = (p) => `<button type="button" class="piece-btn${tool === p.id ? ' selected' : ''}${isCustom(p.id) ? ' piece-btn--custom' : ''}" data-id="${escapeHtml(p.id)}"`
+    // ローグライト：持っている数と、まだ置ける数を出す
+    const counts = rules()?.pieceCounts;
+    const placedOf = (id) => draft.slots.filter((s) => s.pieceId === id).length;
+    const stock = (p) => (counts ? ` <span class="stock">${counts.get(p.id) - placedOf(p.id)}/${counts.get(p.id)}</span>` : '');
+    const button = (p) => `<button type="button" class="piece-btn${tool === p.id ? ' selected' : ''}${isCustom(p.id) ? ' piece-btn--custom' : ''}${counts && placedOf(p.id) >= counts.get(p.id) ? ' piece-btn--used' : ''}" data-id="${escapeHtml(p.id)}"`
       + ` title="${escapeHtml(plain(pieceSummary(p)))}">`
-      + `${escapeHtml(p.icon)} ${escapeHtml(p.name)} <span class="cost">${pieceCost(p)}</span></button>`;
+      + `${escapeHtml(p.icon)} ${escapeHtml(p.name)} <span class="cost">${pieceCost(p)}</span>${stock(p)}</button>`;
     // データ一覧と同じ並び：種族 → コスト → HP（道具はコスト順）
     const byCost = (a, b) => pieceCost(a) - pieceCost(b) || (a.hp ?? 0) - (b.hp ?? 0);
-    const allowed = rules()?.pieces;
+    const allowed = rules()?.pieces ?? (counts ? new Set(counts.keys()) : null);
     const all = cat.pieces().filter((p) => !allowed || allowed.has(p.id));
     const tribeRows = Object.entries(TRIBES).map(([id, t]) => {
       const list = all.filter((p) => p.kind === 'character' && p.tribe === id).sort(byCost);
@@ -173,7 +193,7 @@ export function initTeamEditor({ store, pieceStore }) {
         + ' <button type="button" data-update>最新版に更新</button></div>'
       : '';
     const lockedNote = allowed
-      ? `<div class="palette-note">ストーリーで手に入れた駒だけを表示しています（${all.length} / ${cat.pieces().length}）</div>`
+      ? `<div class="palette-note">${escapeHtml(context?.paletteNote ?? 'ストーリーで手に入れた駒だけを表示しています')}（${all.length} / ${cat.pieces().length}）</div>`
       : '';
     $('palette').innerHTML = lockedNote + note + tribeRows + row('道具', 'item')
       + `<div class="palette-row"><span class="palette-label">その他</span>`
@@ -182,6 +202,16 @@ export function initTeamEditor({ store, pieceStore }) {
   }
 
   function renderRelics() {
+    // ローグライト：持っている遺物が全部、自動でつく（選べない）
+    if (context?.fixedRelics) {
+      const counts = new Map();
+      for (const id of draft.relics) counts.set(id, (counts.get(id) ?? 0) + 1);
+      $('relic-count').textContent = `${draft.relics.length}個（持っている遺物が全部、自動で効きます）`;
+      $('relic-picker').innerHTML = [...counts].map(([id, n]) => RELICS.find((r) => r.id === id)).filter(Boolean)
+        .map((r) => `<div class="relic-btn selected"><strong>${r.icon} ${escapeHtml(r.name)} ×${counts.get(r.id)}</strong><span class="muted">${effectsText(r.effects)}</span></div>`).join('')
+        || '<p class="muted">まだ遺物を持っていません</p>';
+      return;
+    }
     const full = draft.relics.length >= MAX_RELICS;
     $('relic-count').textContent = `${draft.relics.length} / ${MAX_RELICS}`;
     const allowed = rules()?.relics;
@@ -238,6 +268,7 @@ export function initTeamEditor({ store, pieceStore }) {
     const btn = ev.target.closest('[data-id]');
     if (!btn) return;
     const id = btn.dataset.id;
+    if (context?.fixedRelics) return;
     if (draft.relics.includes(id)) draft.relics = draft.relics.filter((r) => r !== id);
     else if (draft.relics.length < MAX_RELICS) draft.relics.push(id);
     renderRelics();
@@ -263,7 +294,7 @@ export function initTeamEditor({ store, pieceStore }) {
 
   $('team-new').addEventListener('click', () => {
     if (!confirmDiscard()) return;
-    loadDraft(blankTeam(), { message: ['info', '新しいチームを作りました'] });
+    loadDraft(blankTeam(), { message: ['info', '新しいチームを作りました（駒をすべて外しました）'] });
   });
 
   $('team-save').addEventListener('click', () => {
@@ -367,10 +398,15 @@ export function initTeamEditor({ store, pieceStore }) {
       const want = next?.preferredSlot?.();
       if (next?.store === context?.store) {
         if (next) context = next;
-        // 同じ場面に戻ってきたとき：変更がなければ、選ばれているスロットを開き直す
+        // 同じ場面に戻ってきたとき：変更がなければ、選ばれているスロット（なければ今のスロット）を開き直す。
+        // ローグライトでは、そのあいだに増えた駒・遺物もここで反映される
         saved = activeStore().load();
-        if (saved[want] && want !== loadedSlot && !dirty()) loadDraft(saved[want], { fromSlot: want });
-        else render();
+        const target = saved[want] ? want : loadedSlot;
+        if (next && target !== null && saved[target] && !dirty()) loadDraft(saved[target], { fromSlot: target });
+        else {
+          if (next) fixup(draft);
+          render();
+        }
         return true;
       }
       if (!confirmDiscard()) return false;

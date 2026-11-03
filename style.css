@@ -690,3 +690,42 @@ body[data-view="rules"] .help-btn { border-color: #6d6235; color: var(--accent);
 .story-foe-name { display: flex; align-items: center; gap: 8px; font-size: 1.1rem; }
 .story-foe-board { max-width: 320px; }
 .story-reward ul { line-height: 1.9; }
+
+/* ---- ローグライト ---- */
+.piece-btn .stock { margin-left: 4px; font-size: 0.75rem; color: var(--adj); }
+.piece-btn--used { opacity: 0.45; }
+.rogue-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.rogue-head h2 { margin: 0 0 6px; }
+.rogue-floor-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.rogue-floor-head h2 { margin: 0; display: flex; align-items: center; gap: 10px; }
+.rogue-kind { font-size: 0.8rem; padding: 2px 10px; border-radius: 999px; background: var(--cell-line); }
+.rogue-kind--strong { background: #8a5a1f; }
+.rogue-kind--boss { background: #8a2f2f; }
+.rogue-vs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 12px 0; }
+.rogue-vs .panel { margin: 0; }
+.rogue-vs h3 { margin: 0 0 4px; }
+.rogue-chip { display: inline-flex; align-items: center; gap: 4px; margin: 2px 4px 2px 0; padding: 2px 8px; border-radius: 6px; background: var(--cell); font-size: 0.9rem; }
+.rogue-chip .cost { padding: 0 4px; border-radius: 3px; background: #14161b; color: var(--muted); font-size: 0.75rem; }
+.rogue-sets { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.rogue-set { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; text-align: left; background: var(--panel); border: 2px solid var(--cell-line); border-radius: 10px; color: var(--text); }
+.rogue-set.selected { border-color: var(--front); background: #3b3a2a; }
+.rogue-boards { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.rogue-board { display: flex; flex-direction: column; padding: 8px 14px; border: 2px solid var(--cell-line); border-radius: 8px; cursor: pointer; }
+.rogue-board input { position: absolute; opacity: 0; pointer-events: none; }
+.rogue-board.selected { border-color: var(--front); background: #3b3a2a; }
+.rogue-row { display: grid; grid-template-columns: 1fr auto 3.5em; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--cell); }
+.rogue-row-name { display: flex; flex-direction: column; gap: 1px; }
+.rogue-row-name small { font-size: 0.75rem; }
+.rogue-perk { grid-template-columns: auto 1fr 3.5em; cursor: pointer; }
+.rogue-stepper { display: inline-flex; align-items: center; gap: 4px; }
+.rogue-stepper button { min-width: 2em; padding: 2px 6px; }
+.rogue-stepper strong { min-width: 1.6em; text-align: center; }
+.rogue-price { text-align: right; font-size: 0.8rem; }
+.rogue-group { margin: 6px 0; }
+.rogue-group summary { cursor: pointer; padding: 4px 0; }
+.rogue-owned summary { cursor: pointer; }
+.rogue-result h2 { margin-top: 0; }
+@media (max-width: 600px) {
+  .rogue-row:not(.rogue-perk) { grid-template-columns: 1fr auto; }
+  .rogue-row:not(.rogue-perk) .rogue-price { grid-column: 2; }
+}

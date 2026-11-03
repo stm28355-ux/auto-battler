@@ -30,8 +30,8 @@
           <button type="button" class="mode-card mode-card--story" data-go="story">
             <span class="mode-card-icon">📜</span><span class="mode-card-name">ストーリー</span><span id="home-story-note" class="soon soon--live">遊べます</span>
           </button>
-          <button type="button" class="mode-card mode-card--rogue" disabled>
-            <span class="mode-card-icon">🗝️</span><span class="mode-card-name">ローグライト</span><span class="soon">準備中</span>
+          <button type="button" class="mode-card mode-card--rogue" data-go="rogue">
+            <span class="mode-card-icon">🗼</span><span class="mode-card-name">ローグライト</span><span class="soon soon--live">遊べます</span>
           </button>
           <div id="home-stats" class="home-stats panel"></div>
         </div>
@@ -65,7 +65,7 @@
 
     <div id="view-battle" data-mode="custom">
       <section class="panel match-setup">
-        <div id="story-bar" class="story-bar only-story"><span>📜 <strong id="story-bar-title"></strong></span><button id="story-back" type="button">ストーリーに戻る</button></div>
+        <div id="story-bar" class="story-bar only-story"><span><strong id="story-bar-title"></strong></span><button id="story-back" type="button">ストーリーに戻る</button></div>
         <div class="mode-switch not-story" role="radiogroup" aria-label="対戦モード">
           <label><input type="radio" name="mode" value="custom" checked> カスタム対戦</label>
           <label><input type="radio" name="mode" value="random"> ランダムマッチ</label>
@@ -235,6 +235,10 @@
 
     <div id="view-story" hidden>
       <div id="story-root" class="story"></div>
+    </div>
+
+    <div id="view-rogue" hidden>
+      <div id="rogue-root" class="story rogue"></div>
     </div>
 
     <div id="view-rules" hidden>
