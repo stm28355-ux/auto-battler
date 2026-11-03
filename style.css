@@ -709,6 +709,8 @@ body[data-view="rules"] .help-btn { border-color: #6d6235; color: var(--accent);
 .rogue-sets { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
 .rogue-set { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px 12px; text-align: left; background: var(--panel); border: 2px solid var(--cell-line); border-radius: 10px; color: var(--text); }
 .rogue-set.selected { border-color: var(--front); background: #3b3a2a; }
+.rogue-detail { margin-top: 8px; min-height: 3.5em; font-size: 0.9rem; }
+.rogue-detail hr { border: none; border-top: 1px solid var(--cell-line); margin: 6px 0; }
 .rogue-boards { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
 .rogue-board { display: flex; flex-direction: column; padding: 8px 14px; border: 2px solid var(--cell-line); border-radius: 8px; cursor: pointer; }
 .rogue-board input { position: absolute; opacity: 0; pointer-events: none; }

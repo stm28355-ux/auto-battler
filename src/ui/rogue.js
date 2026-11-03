@@ -69,11 +69,11 @@ export function initRogue({ go, battle, storage, env, latest, switchToLatest }) 
   // ---- 共通の部品 ----
   const pieceChip = (id) => {
     const p = piece(id);
-    return `<span class="rogue-chip" title="${escapeHtml(pieceSummary(p).replace(/<[^>]*>/g, ' '))}">${escapeHtml(p.icon)} ${escapeHtml(p.name)} <span class="cost">${pieceCost(p)}</span>${p.kind === 'character' ? ` ${tribeTag(p.tribe)}` : ''}</span>`;
+    return `<span class="rogue-chip" data-piece="${escapeHtml(id)}" title="${escapeHtml(pieceSummary(p).replace(/<[^>]*>/g, ' '))}">${escapeHtml(p.icon)} ${escapeHtml(p.name)} <span class="cost">${pieceCost(p)}</span>${p.kind === 'character' ? ` ${tribeTag(p.tribe)}` : ''}</span>`;
   };
   const relicChip = (id, n = 1) => {
     const r = relic(id);
-    return `<span class="rogue-chip" title="${escapeHtml(effectsText(r.effects).replace(/<[^>]*>/g, ' '))}">${escapeHtml(r.icon)} ${escapeHtml(r.name)}${n > 1 ? ` ×${n}` : ''}</span>`;
+    return `<span class="rogue-chip" data-relic="${escapeHtml(id)}" title="${escapeHtml(effectsText(r.effects).replace(/<[^>]*>/g, ' '))}">${escapeHtml(r.icon)} ${escapeHtml(r.name)}${n > 1 ? ` ×${n}` : ''}</span>`;
   };
   const relicList = (ids) => {
     const counts = new Map();
@@ -223,12 +223,27 @@ export function initRogue({ go, battle, storage, env, latest, switchToLatest }) 
   }
 
   // ---- 報酬 ----
+  // 候補の詳細：駒・遺物にマウスを乗せるとその1つ、セットを選ぶとセットの中身を出す（チーム編成の駒の詳細と同じ表示）
+  const detailHint = '駒・遺物にマウスを乗せるか、セットを選ぶと詳細を表示します。';
+  const relicDetail = (id) => {
+    const r = relic(id);
+    return `<strong>${escapeHtml(r.icon)} ${escapeHtml(r.name)}</strong>（遺物）<br>${effectsText(r.effects)}`;
+  };
+  const detailOf = (el) => (el.dataset.piece ? pieceSummary(piece(el.dataset.piece)) : relicDetail(el.dataset.relic));
+  const showDetail = (key, html) => {
+    const box = root().querySelector(`[data-detail="${key}"]`);
+    if (box) box.innerHTML = html;
+  };
+  const setDetail = (key) => (picks[key] === null ? detailHint
+    : run.offer[key][picks[key]].map((id) => (key === 'pieces' ? pieceSummary(piece(id)) : relicDetail(id))).join('<hr>'));
+
   function renderReward() {
     const { offer } = run;
     const group = (key, title, chip) => {
       if (!offer[key]) return '';
       const cards = offer[key].map((set, i) => `<button type="button" class="rogue-set${picks[key] === i ? ' selected' : ''}" data-pick="${key}" data-i="${i}">${set.map(chip).join('')}</button>`).join('');
       return `<h3>${title}</h3><div class="rogue-sets">${cards}</div>`
+        + `<div class="panel hover-info rogue-detail" data-detail="${key}">${detailHint}</div>`
         + `<div class="buttons"><button type="button" data-reroll="${key}" ${run.rerolls > 0 ? '' : 'disabled'}>🎲 引き直す（残り${run.rerolls}回）</button></div>`;
     };
     const kind = floorKind(run.floor);
@@ -243,6 +258,7 @@ export function initRogue({ go, battle, storage, env, latest, switchToLatest }) 
         ${group('relics', `遺物（${offer.relics?.[0]?.length ?? 0}個）`, (id) => relicChip(id))}
         <div class="buttons"><button type="button" class="primary" data-take ${ready ? '' : 'disabled'}>受け取って第${run.floor + 1}層へ</button></div>
       </section>`;
+    for (const key of ['pieces', 'relics']) if (offer[key]) showDetail(key, setDetail(key));
   }
 
   // ---- リザルト ----
@@ -338,6 +354,15 @@ export function initRogue({ go, battle, storage, env, latest, switchToLatest }) 
       saveRun();
       render();
     }
+  });
+  // 報酬の候補：マウスを乗せた駒・遺物の詳細。離れたら選んでいるセットの詳細に戻す
+  $('rogue-root').addEventListener('mouseover', (ev) => {
+    const chip = ev.target.closest('.rogue-set [data-piece], .rogue-set [data-relic]');
+    if (chip) showDetail(chip.closest('[data-pick]').dataset.pick, detailOf(chip));
+  });
+  $('rogue-root').addEventListener('mouseout', (ev) => {
+    const set = ev.target.closest('[data-pick]');
+    if (set && !set.contains(ev.relatedTarget) && run?.phase === 'reward') showDetail(set.dataset.pick, setDetail(set.dataset.pick));
   });
   $('rogue-root').addEventListener('change', (ev) => {
     const perk = ev.target.closest('[data-perk]');

@@ -59,6 +59,18 @@ test('報酬：駒2個のセットが3つ。レアはキャラがコスト4以�
   assert.ok(cheap > dear * 5, `${cheap} / ${dear}`);
 });
 
+test('報酬：1つの候補の中に、同じ組み合わせのセットは出ない（並び順は問わない）', () => {
+  const key = (set) => [...set].sort().join('+');
+  const rng = createRng(9);
+  const pieces = catalog.pieces();
+  const relics = catalog.relics();
+  for (let i = 0; i < 300; i++) {
+    for (const sets of [pieceOffer(pieces, rng), pieceOffer(pieces, rng, { rare: true }), relicOffer(relics, {}, rng), relicOffer(relics, {}, rng, 2)]) {
+      assert.equal(new Set(sets.map(key)).size, sets.length, JSON.stringify(sets));
+    }
+  }
+});
+
 test('報酬：遺物は均等。解毒の聖水を5個持っていたら出ない', () => {
   const rng = createRng(2);
   const relics = catalog.relics();

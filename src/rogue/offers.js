@@ -2,6 +2,22 @@ import { pieceCost } from '../core/cost.js';
 import { OFFER } from './config.js';
 
 // 報酬の候補（spec §15）。どれも「セット」の配列を返す。プレイヤーはセットを1つ選ぶ。
+// 同じ組み合わせのセットは、1つの候補の中に2つ出さない（並び順は問わない。2個のセットは1個だけ同じならよい）。
+
+const setKey = (set) => [...set].sort().join('+');
+// draw() でセットを作り、組み合わせが重ならない sets 個をそろえる。候補が少なくてそろわないときは、重なりを許す
+function distinctSets(draw) {
+  const sets = [];
+  const seen = new Set();
+  for (let tries = 0; sets.length < OFFER.sets && tries < 200; tries++) {
+    const set = draw();
+    if (seen.has(setKey(set))) continue;
+    seen.add(setKey(set));
+    sets.push(set);
+  }
+  while (sets.length < OFFER.sets) sets.push(draw());
+  return sets;
+}
 
 const pickWeighted = (list, weight, rng) => {
   const total = list.reduce((s, x) => s + weight(x), 0);
@@ -30,7 +46,7 @@ export function rarePiece(pieces, rng) {
 // 駒2個のセットを3つ
 export function pieceOffer(pieces, rng, { rare = false } = {}) {
   const one = () => (rare ? rarePiece(pieces, rng) : normalPiece(pieces, rng));
-  return Array.from({ length: OFFER.sets }, () => [one(), one()]);
+  return distinctSets(() => [one(), one()]);
 }
 
 // 候補に出せる遺物：均等。解毒の聖水を上限まで持っていたら出さない
@@ -41,7 +57,7 @@ export function relicPool(relics, owned = {}) {
 // 遺物 perSet 個のセットを3つ（セットの中では重ならない）
 export function relicOffer(relics, owned, rng, perSet = 1) {
   const pool = relicPool(relics, owned);
-  return Array.from({ length: OFFER.sets }, () => {
+  return distinctSets(() => {
     const left = [...pool];
     const set = [];
     while (set.length < perSet && left.length) set.push(left.splice(Math.floor(rng() * left.length), 1)[0].id);
