@@ -10,6 +10,7 @@ import { RELICS } from '../data/relics.js';
 export const STORY_KEY = 'auto-battler.story.v1';
 export const STORY_TEAMS_KEY = 'auto-battler.story.teams.v1';
 export const STORY_SLOTS = 3;
+export const STORY_SLOT_KEY = 'auto-battler.story.slot.v1'; // 対戦前に選ぶスロット（最後に選んだ・保存したもの）
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 

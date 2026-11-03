@@ -18,7 +18,7 @@ const blankTeam = () => ({ name: '新しいチーム', board: 'square', slots: [
 
 // 「チーム編成」タブ：駒を選んでマスに置き、9つのスロットに保存する。JSONの入出力にも対応。
 // setContext で「ストーリー用の編成」に切り替えられる（保存先・コスト上限・使える駒と遺物が変わり、自作駒とJSONは使わない）。
-//   context: { label, store, rules(): validateTeam の制限, onBack(): 戻る }。null なら通常の編成
+//   context: { label, store, rules(): validateTeam の制限, onBack(): 戻る, onSaved(slot): 保存したとき }。null なら通常の編成
 export function initTeamEditor({ store, pieceStore }) {
   let context = null;
   const activeStore = () => context?.store ?? store;
@@ -277,6 +277,7 @@ export function initTeamEditor({ store, pieceStore }) {
     saved = activeStore().load();
     loadedSlot = slot;
     baseline = JSON.stringify(draft);
+    context?.onSaved?.(slot);
     render();
     setMessage('ok', `スロット${slot + 1}に保存しました`);
   });

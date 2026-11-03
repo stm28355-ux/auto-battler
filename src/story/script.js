@@ -55,7 +55,7 @@ export const BATTLERS = {
   mule: {
     name: 'ミュレ', title: '科学部部長', icon: '🧪', tribe: 'mage', strength: 'normal',
     team: T('ミュレの毒実験', 'pentagram', { '2,1': 'c_knight', '2,2': 'c_apprentice', '2,3': 'c_hexer', '2,4': 'c_apprentice', '3,1': 'c_cursemaster', '3,2': 'c_apprentice', '3,3': 'c_witch' }, ['r_hourglass', 'r_spring']),
-    rematch: T('ミュレの毒魔術', 'pentagram', { '4,3': 'i_vial', '2,1': 'c_knight', '2,2': 'c_apprentice', '2,3': 'c_hexer', '2,4': 'c_apprentice', '2,5': 'c_witch', '3,1': 'c_knight', '3,2': 'c_apprentice', '3,3': 'c_hexer', '3,4': 'c_apprentice' }, ['r_hourglass', 'r_spring', 'r_amulet']),
+    rematch: T('ミュレの毒魔術', 'pentagram', { '4,3': 'i_vial', '2,1': 'c_knight', '2,2': 'c_apprentice', '2,3': 'c_hexer', '2,4': 'c_apprentice', '2,5': 'c_witch', '3,1': 'c_knight', '3,2': 'c_apprentice', '3,3': 'c_hexer', '3,4': 'c_apprentice', '3,5': 'i_drum' }, ['r_hourglass', 'r_spring', 'r_amulet']),
   },
   machina: {
     name: 'マキナ', title: '前年優勝者', icon: '🦾', tribe: 'machine', strength: 'normal',
@@ -94,7 +94,7 @@ export const BATTLERS = {
   zain: {
     name: 'ザイン', title: '留学生', icon: '🧳', tribe: 'neutral', strength: 'normal',
     team: T('異国のバトラー', 'honeycomb', { '1,2': 'c_knight', '2,1': 'c_vampire', '3,2': 'c_bear', '2,3': 'i_potion', '1,4': 'c_lion', '2,5': 'c_boar', '3,4': 'c_lion' }, ['r_lone']),
-    rematch: T('不死の夜会', 'pentagram', { '2,1': 'c_knight', '3,1': 'c_vampire', '2,2': 'c_apprentice', '2,3': 'c_hexer', '2,4': 'c_apprentice', '2,5': 'c_apprentice', '3,2': 'c_apprentice', '3,3': 'c_medibot', '3,4': 'c_apprentice', '1,3': 'i_potion', '4,3': 'i_gear' }, ['r_spring', 'r_amulet', 'r_hourglass']),
+    rematch: T('不死の夜会', 'pentagram', { '2,1': 'c_knight', '3,1': 'c_vampire', '2,2': 'c_apprentice', '2,3': 'c_hexer', '2,4': 'c_apprentice', '2,5': 'c_apprentice', '3,2': 'c_apprentice', '3,3': 'c_medibot', '3,4': 'c_apprentice', '1,3': 'i_potion', '4,3': 'i_gear', '3,5': 'i_drum' }, ['r_spring', 'r_amulet', 'r_hourglass']),
   },
   shiori: {
     name: 'シオリ', title: '図書委員', icon: '📚', tribe: 'mage', strength: 'normal',
@@ -104,7 +104,7 @@ export const BATTLERS = {
   van: {
     name: 'ヴァン', title: '宝物庫番の老教師', icon: '👴', tribe: 'beast', strength: 'normal',
     team: T('宝物庫の守り手', 'honeycomb', { '1,2': 'c_lion', '1,4': 'c_hawk', '2,1': 'c_bear', '2,3': 'i_blade', '2,5': 'c_leopard', '3,2': 'c_boar', '3,4': 'c_wolf' }, ['r_totem', 'r_whetstone']),
-    rematch: T('宝物庫の秘蔵品', 'square', { '1,1': 'c_paladin', '2,1': 'c_behemoth', '3,1': 'c_squire', '1,2': 'c_lion', '2,2': 'i_crown', '3,2': 'c_swordmaster', '1,3': 'c_hawk', '2,3': 'i_drum' }, ['r_phalanx', 'r_amulet', 'r_whetstone']),
+    rematch: T('宝物庫の秘蔵品', 'square', { '1,1': 'c_paladin', '2,1': 'c_behemoth', '3,1': 'c_squire', '1,2': 'c_lion', '2,2': 'i_crown', '3,2': 'c_swordmaster', '1,3': 'c_hawk', '2,3': 'i_drum', '3,3': 'i_ward' }, ['r_phalanx', 'r_amulet', 'r_whetstone']),
   },
 };
 

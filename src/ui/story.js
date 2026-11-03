@@ -3,7 +3,7 @@ import { CHARACTERS, ITEMS } from '../data/pieces.js';
 import { RELICS } from '../data/relics.js';
 import { createCatalog } from '../core/catalog.js';
 import { teamCost, validateTeam } from '../core/team.js';
-import { createStoryStore, rewardDiff, storyCap, storyRules, storyStatus } from '../story/progress.js';
+import { createStoryStore, rewardDiff, storyCap, storyRules, storyStatus, STORY_SLOT_KEY } from '../story/progress.js';
 import { renderBoard } from './boardView.js';
 import { $, escapeHtml, tribeTag } from './format.js';
 
@@ -19,6 +19,21 @@ export function initStory({ go, battle, teamStore, storage, env, latest, switchT
   let store = null;
   let resume = null; // 編成・対戦から戻ったときに表示する画面
   const root = () => $('story-root');
+  // 対戦前に選んでおくスロット。最後に選んだ・編成で保存したスロットを覚える
+  const preferredSlot = () => {
+    try {
+      return Number(storage.getItem(STORY_SLOT_KEY)) || 0;
+    } catch {
+      return 0;
+    }
+  };
+  const rememberSlot = (i) => {
+    try {
+      storage.setItem(STORY_SLOT_KEY, String(i));
+    } catch {
+      // 覚えられなくても、選び直せば遊べる
+    }
+  };
   const cleared = () => store.load().cleared;
   const status = () => storyStatus(mod.STORY, cleared());
   const pieceName = (id) => {
@@ -54,7 +69,7 @@ export function initStory({ go, battle, teamStore, storage, env, latest, switchT
         + `<span>${escapeHtml(e.summary ?? '')}</span>${foe}</button>`;
     };
     const rematch = st.finished
-      ? `<h3>再戦（クリア後）</h3><p class="muted">学園のバトラーたちと、何度でも戦えます（メインの相手は本気のチームで来ます）。</p><div class="story-cards">${
+      ? `<h3>再戦（クリア後）</h3><p class="muted">強化された学園のバトラーたちと戦えます。</p><div class="story-cards">${
         Object.entries(mod.BATTLERS).filter(([, b]) => !b.noRematch).map(([id, b]) => `<button type="button" class="story-card" data-rematch="${escapeHtml(id)}">`
           + `<span class="story-card-head"><strong>${escapeHtml(b.icon)} ${escapeHtml(b.name)}</strong><span class="muted">${escapeHtml(b.title)}</span></span>`
           + `<span class="muted">${escapeHtml((b.rematch ?? b.team).name)} ${tribeTag(b.tribe)}</span></button>`).join('')}</div>`
@@ -165,7 +180,10 @@ export function initStory({ go, battle, teamStore, storage, env, latest, switchT
         </div>
       </section>`;
     $('story-foe-board').replaceChildren(renderBoard(BOARDS[foe.board], { team: foe, catalog }));
-    if (usable.length) $('story-team').value = String(usable[0]);
+    if (usable.length) {
+      $('story-team').value = String(usable.includes(preferredSlot()) ? preferredSlot() : usable[0]);
+      $('story-team').addEventListener('change', () => rememberSlot(Number($('story-team').value)));
+    }
 
     root().querySelector('[data-fight]').addEventListener('click', () => {
       const mine = teams[Number($('story-team').value)];
@@ -278,6 +296,7 @@ export function initStory({ go, battle, teamStore, storage, env, latest, switchT
         store: teamStore,
         rules: () => storyRules(status()),
         onBack: () => go('story'),
+        onSaved: rememberSlot,
       };
     },
   };
