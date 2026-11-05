@@ -26,6 +26,7 @@ import { loadTeams } from './meta.js';
 import { solveNash } from './search/nash.js';
 import { createPool } from './search/pool.js';
 import { createSpace, descriptor, teamKey } from './search/space.js';
+import { teamLabel, writeTeams } from './search/names.js';
 import { canonicalize } from './search/prune.js';
 
 const args = process.argv.slice(2);
@@ -355,15 +356,13 @@ const final = solveNash(F);
 const support = league.map((l, i) => ({ ...l, i, w: final.weights[i], v: final.values[i] })).filter((x) => x.w > 0).sort((a, b) => b.w - a.w);
 console.log(`\n[${elapsed()}] 結果（シード${O.finalSeeds}×先後、探索とは別のシード） 試したチーム ${evaluated}`);
 console.log('環境で使われるチーム（割合・環境に対する得点）');
-for (const s of support) console.log(`  ${s.name.padEnd(5)} ${String(Math.round(s.w * 100)).padStart(3)}%  ${s.v.toFixed(3)}  ${describe(s.team)}`);
+for (const s of support) console.log(`  ${s.name.padEnd(5)} ${String(Math.round(s.w * 100)).padStart(3)}%  ${s.v.toFixed(3)}  ${teamLabel(s.team, catalog)}\n          ${describe(s.team)}`);
 console.log(`どのチームも環境に対して ${(0.5 + final.exploit).toFixed(3)} 以下（0.5に近いほど、環境が崩れにくい）`);
 console.log('\n相性（行が列と戦ったときの得点×100）');
 console.log('       ' + support.map((s) => s.name.padStart(6)).join(''));
 for (const a of support) console.log(`  ${a.name.padEnd(5)}${support.map((b) => (a === b ? '     -' : String(Math.round(F[a.i][b.i] * 100)).padStart(6))).join('')}`);
 
-fs.mkdirSync(O.out, { recursive: true });
-for (const f of fs.readdirSync(O.out)) if (f.endsWith('.team.json')) fs.rmSync(path.join(O.out, f));
-support.forEach((s, idx) => fs.writeFileSync(path.join(O.out, `${String(idx + 1).padStart(2, '0')}_${s.name}.team.json`), exportTeamJson({ ...s.team, name: s.name })));
+writeTeams(O.out, support, catalog, { exportTeamJson, describe });
 fs.writeFileSync(path.join(O.out, 'summary.json'), JSON.stringify({
   env: env.id, options: O, evaluated,
   league: league.map((l, i) => ({ name: l.name, weight: final.weights[i], value: final.values[i], team: l.team })),

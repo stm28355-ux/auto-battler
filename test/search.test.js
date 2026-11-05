@@ -8,6 +8,7 @@ import { runBattle } from '../src/engine/battle.js';
 import { canonicalize, dominates, isDowngrade, isPrunable, itemLive, removeDeadItems, safeAddition, safeToAdd } from '../tools/search/prune.js';
 import { solveNash } from '../tools/search/nash.js';
 import { createSpace, descriptor, teamKey } from '../tools/search/space.js';
+import { teamLabel } from '../tools/search/names.js';
 
 // Ver.1 の駒で確かめる（魔剣 ⊇ 鉄の剣 などがある）
 function v1() {
@@ -124,6 +125,12 @@ test('すぐ近くには「持っている駒を3マスに増やす」変更も�
   const keys = new Set();
   for (const t of createSpace(c).neighborhood(canonicalize(from, c), { pairs: true })) keys.add(teamKey(t));
   assert.ok(keys.has(teamKey(goal)));
+  done();
+});
+
+test('見つけたチームの名前：ボード_主な種族_いちばん多いキャラと数_戦術', () => {
+  const c = v1();
+  assert.equal(teamLabel(golem(), c), 'スクエア_機械_ゴーレム4_耐久・毒');
   done();
 });
 
