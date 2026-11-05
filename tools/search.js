@@ -37,10 +37,17 @@ const envId = opt('env', undefined);
 if (envId && !findEnvironment(envId)) throw new Error(`知らない環境です: ${envId}`);
 const env = applyEnvironment(envId);
 const O = {
-  minutes: Number(opt('minutes', 20)), // 探索（1・2）の時間
+  minutes: Number(opt('minutes', 20)), // 1回の探索（1・2）の時間の上限
   polishMinutes: Number(opt('polish-minutes', 15)), // 仕上げ（3）の時間
   workers: Number(opt('workers', Math.max(1, os.cpus().length - 1))),
   seeds: Number(opt('seeds', 8)), // 探索中の1組あたりのシード数（先後で2倍戦う）
+  quickSeeds: Number(opt('quick-seeds', 2)), // 先に少ないシードで測り、見込みのない候補はここで落とす
+  patience: Number(opt('patience', 10)), // 均衡がこの回数（リーグの更新）続けて崩れなければ、探索を早めに終える
+  restarts: Number(opt('restarts', 3)), // 乱数を変えて、別々に探す回数
+  mergeMinutes: Number(opt('merge-minutes', 10)), // 各回の答えをまとめたあとに探す時間
+  minMinutes: Number(opt('min-minutes', 10)), // これより前には、均衡が崩れなくても探索を終えない
+  leagueSeeds: Number(opt('league-seeds', 24)), // リーグの相性表のシード数（均衡はこの表で決まるので、ぶれを小さくする）
+  eps: Number(opt('eps', 0.02)), // 新しいチームが均衡にこれ以上勝ち越さなければ「崩れていない」とみなす
   finalSeeds: Number(opt('final-seeds', 30)), // 最後の測り直しのシード数（探索とは別のシードを使う）
   batch: Number(opt('batch', 2000)),
   leagueEvery: Number(opt('league-every', 4)),
@@ -55,7 +62,6 @@ const O = {
 const catalog = createCatalog();
 for (const b of O.boards) if (!BOARDS[b]) throw new Error(`知らないボードです: ${b}`);
 const space = createSpace(catalog, { boards: O.boards });
-const rng = createRng(O.seed);
 const pool = createPool(env.id, O.workers);
 const t0 = Date.now();
 const elapsed = () => `${((Date.now() - t0) / 60000).toFixed(1)}分`;
@@ -85,19 +91,20 @@ async function addToLeague(teams) {
     if (league.some((l) => l.key === key) || fresh.some((f) => f.key === key)) continue;
     fresh.push({ team: t, key, name: t.name });
   }
-  if (!fresh.length) return 0;
+  if (!fresh.length) return [];
   const base = league.length;
   league.push(...fresh);
   const pairs = [];
   for (let i = base; i < league.length; i++) for (let j = 0; j < i; j++) pairs.push([league[i].team, league[j].team]);
-  const results = await pool.pays(pairs, O.seeds, 1);
+  const results = await pool.pays(pairs, O.leagueSeeds, 1);
   A = league.map((_, i) => league.map((__, j) => (i === j ? 0.5 : A[i]?.[j])));
   let k = 0;
   for (let i = base; i < league.length; i++) for (let j = 0; j < i; j++) {
     A[i][j] = results[k++];
     A[j][i] = 1 - A[i][j];
   }
-  return fresh.length;
+  // 新しいチームが、入れる前の均衡に対して取った得点（挑戦者の強さ。均衡が崩れたかの目安）
+  return fresh.map((_, f) => mix.weights.reduce((s, w, j) => s + w * A[base + f][j], 0));
 }
 
 // ナッシュ均衡を解き直し、強さを測る相手を決める。リーグが大きすぎたら、使われず得点も低いチームから外す
@@ -118,10 +125,12 @@ function updateMix() {
   mixVersion++;
 }
 
-async function fitness(teams) {
+// シードは均衡を解き直すたびに変える。同じシードで測り続けると、そのシードで運よく勝つチームが残り続けるため
+const seedFrom = () => 10000 + mixVersion * 64;
+async function fitness(teams, seeds = O.seeds, from = seedFrom()) {
   if (!teams.length) return [];
   const pairs = teams.flatMap((t) => opps.map((o) => [t, o.team]));
-  const results = await pool.pays(pairs, O.seeds, 1);
+  const results = await pool.pays(pairs, seeds, from);
   return teams.map((_, i) => opps.reduce((s, o, j) => s + o.w * results[i * opps.length + j], 0));
 }
 
@@ -129,6 +138,7 @@ async function fitness(teams) {
 const archive = new Map(); // 区切り → { team, fit, key, version }
 const seen = new Map(); // key → mixVersion（同じ相手で同じチームを2度測らない）
 let evaluated = 0;
+let raced = 0; // 少ないシードの段階で落とした数
 
 async function offer(teams) {
   const fresh = [];
@@ -139,12 +149,19 @@ async function offer(teams) {
     seen.set(key, mixVersion);
     fresh.push({ team: t, key });
   }
-  const fits = await fitness(fresh.map((f) => f.team));
   evaluated += fresh.length;
-  fresh.forEach((f, i) => {
-    const d = descriptor(f.team, catalog);
-    const cur = archive.get(d);
-    if (!cur || fits[i] > cur.fit) archive.set(d, { team: f.team, fit: fits[i], key: f.key });
+  // 先に少ないシードで測る。区切りの今の最強より明らかに低い候補は、ここで落とす（全部のシードで測らない）
+  const quick = O.quickSeeds < O.seeds ? await fitness(fresh.map((f) => f.team), O.quickSeeds) : null;
+  const keep = fresh.filter((f, i) => {
+    f.d = descriptor(f.team, catalog);
+    const cur = archive.get(f.d);
+    return !quick || !cur || quick[i] > cur.fit - 0.08;
+  });
+  raced += fresh.length - keep.length;
+  const fits = await fitness(keep.map((f) => f.team));
+  keep.forEach((f, i) => {
+    const cur = archive.get(f.d);
+    if (!cur || fits[i] > cur.fit) archive.set(f.d, { team: f.team, fit: fits[i], key: f.key });
   });
 }
 
@@ -177,11 +194,18 @@ async function polish(team, deadlineAt, { pairs: usePairs = true, quiet = false 
         const k = teamKey(t);
         if (!keys.has(k)) { keys.add(k); cands.push(t); }
       }
-      let best = null;
+      let top = [];
       for (let i = 0; i < cands.length && Date.now() < deadlineAt; i += 4000) {
         const part = cands.slice(i, i + 4000);
         const fits = await fitness(part);
-        fits.forEach((f, j) => { if (f > curFit + 0.002 && (!best || f > best.fit)) best = { team: part[j], fit: f }; });
+        fits.forEach((f, j) => { if (f > curFit + 0.002) top.push({ team: part[j], fit: f }); });
+        top = top.sort((x, y) => y.fit - x.fit).slice(0, 6);
+      }
+      // たくさんの候補から最高を選ぶと、運よく高く出たものを選びやすい。上位を別のシードで多めに測り直して選ぶ
+      let best = null;
+      if (top.length) {
+        const [base, ...rest] = await fitness([cur, ...top.map((x) => x.team)], O.seeds * 3, 50000 + round * 100 + (pairs ? 50 : 0));
+        rest.forEach((f, j) => { if (f > base + 0.005 && (!best || f - base > best.gain)) best = { team: top[j].team, fit: top[j].fit, gain: f - base }; });
       }
       if (best) {
         // 元のチームにも負け越さないこと（別のシードで確かめる）
@@ -201,44 +225,106 @@ async function polish(team, deadlineAt, { pairs: usePairs = true, quiet = false 
   return cur;
 }
 
-// ---- 1・2. 探索 ----
+// ---- 1・2. 探索（乱数を変えて何回か、別々に。最後に各回の答えを1つのリーグに入れてまとめる） ----
+// 1回の探索は、乱数しだいで「環境の上位のうちの一部」に落ち着いてしまうことがある。別々に探した答えどうしを
+// 戦わせれば、落ち着き損ねた回は他の回の答えに負けるので分かる（各回が同じ答えにたどり着けば、答えを信用できる）。
 const startTeams = O.start ? readTeams(O.start).map((t) => ({ ...canonicalize(t, catalog), name: t.name })) : [];
-console.log(`環境 ${env.name}  ボード ${O.boards.join('・')}  ワーカー${O.workers}  探索${O.minutes}分＋仕上げ${O.polishMinutes}分  シード${O.seeds}`);
-const init = [];
-const initKeys = new Set();
-for (let guard = 0; init.length < 3000 && guard < 100000; guard++) {
-  const t = space.random(rng);
-  if (t && !initKeys.has(teamKey(t))) { initKeys.add(teamKey(t)); init.push(t); }
-}
-await addToLeague([...startTeams, ...init.slice(0, 20).map((t) => withName(t, 'R'))]);
-updateMix();
-await offer([...startTeams, ...init]);
-console.log(`[${elapsed()}] 初期 ${evaluated}チーム 区切り${archive.size}`);
+console.log(`環境 ${env.name}  ボード ${O.boards.join('・')}  ワーカー${O.workers}  探索${O.minutes}分×${O.restarts}回${O.restarts > 1 ? `＋まとめ${O.mergeMinutes}分` : ''}＋仕上げ${O.polishMinutes}分  シード${O.seeds}`);
 
-const deadline = t0 + O.minutes * 60000;
-for (let gen = 1; Date.now() < deadline; gen++) {
-  const elites = [...archive.values()];
-  const tour = () => {
-    const a = elites[Math.floor(rng() * elites.length)];
-    const b = elites[Math.floor(rng() * elites.length)];
-    return a.fit >= b.fit ? a.team : b.team;
-  };
-  const others = elites.map((e) => e.team);
-  const batch = [];
-  for (let i = 0; i < O.batch; i++) batch.push(rng() < 0.1 ? space.random(rng) : space.mutate(tour(), rng, others));
-  await offer(batch);
-  if (gen % O.leagueEvery === 0) {
-    // 上位を1マス・遺物の範囲で磨いてからリーグに入れる（変異だけでは届きにくい「あと1マス」を埋める）
-    const tops = [];
-    for (const [, e] of topArchive(8)) tops.push(await polish(e.team, Date.now() + 20000, { pairs: false, quiet: true }));
-    await offer(tops);
-    const added = await addToLeague(tops.map((t) => withName(t, 'S')));
-    updateMix();
-    await rescoreArchive();
-    const [, best] = topArchive(1)[0];
-    console.log(`[${elapsed()}] 世代${gen} 試した${evaluated} 区切り${archive.size} 追加${added} 最高${best.fit.toFixed(3)}（環境に対する得点、0.5で互角）`);
-    printMix('');
+function reset() {
+  league.length = 0;
+  A = [];
+  mix = { weights: [], values: [], exploit: 0 };
+  opps = [];
+  archive.clear();
+  seen.clear();
+}
+
+const supportKey = () => league.filter((_, i) => mix.weights[i] > 0).map((l) => l.key).sort().join('/');
+let still = 0;
+
+async function explore(rng, minutes, seedTeams) {
+  const begin = Date.now();
+  const init = [];
+  const initKeys = new Set();
+  for (let guard = 0; init.length < 3000 && guard < 100000; guard++) {
+    const t = space.random(rng);
+    if (t && !initKeys.has(teamKey(t))) { initKeys.add(teamKey(t)); init.push(t); }
   }
+  await addToLeague([...seedTeams, ...init.slice(0, 20).map((t) => withName(t, 'R'))]);
+  updateMix();
+  await offer([...seedTeams, ...init]);
+  console.log(`[${elapsed()}] 初期 ${evaluated}チーム 区切り${archive.size}`);
+  if (seedTeams.length) printMix('');
+
+  const deadline = begin + minutes * 60000;
+  const minMs = Math.min(O.minMinutes, minutes / 2) * 60000;
+  let lastSupport = supportKey();
+  still = 0;
+  for (let gen = 1; Date.now() < deadline && still < O.patience; gen++) {
+    const elites = [...archive.values()];
+    const tour = () => {
+      const a = elites[Math.floor(rng() * elites.length)];
+      const b = elites[Math.floor(rng() * elites.length)];
+      return a.fit >= b.fit ? a.team : b.team;
+    };
+    const others = elites.map((e) => e.team);
+    // 3割は、均衡で使われているチームから作る（環境の上位に勝つ手は、その上位のすぐ近くにあることが多い）。
+    // ときどき2回続けて変え、「駒を増やす＋遺物を替える」のような、1回では届かない組み合わせにも届くようにする
+    const supportTeams = league.filter((_, i) => mix.weights[i] > 0).map((l) => l.team);
+    const child = () => {
+      if (rng() < 0.1) return space.random(rng);
+      const t = space.mutate(supportTeams.length && rng() < 0.3 ? supportTeams[Math.floor(rng() * supportTeams.length)] : tour(), rng, others);
+      return t && rng() < 0.3 ? space.mutate(t, rng, others) : t;
+    };
+    const batch = [];
+    for (let i = 0; i < O.batch; i++) batch.push(child());
+    await offer(batch);
+    if (gen % O.leagueEvery === 0) {
+      // 上位を1マス・遺物の範囲で磨いてからリーグに入れる（変異だけでは届きにくい「あと1マス」を埋める）
+      const tops = [];
+      for (const [, e] of topArchive(8)) tops.push(await polish(e.team, Date.now() + 20000, { pairs: false, quiet: true }));
+      await offer(tops);
+      const challenge = await addToLeague(tops.map((t) => withName(t, 'S')));
+      const added = challenge.length;
+      const gap = challenge.length ? Math.max(...challenge) - 0.5 : -1;
+      updateMix();
+      await rescoreArchive();
+      const [, best] = topArchive(1)[0];
+      const sk = supportKey();
+      // 均衡で使うチームが変わらない、または新しいチームがどれも均衡にほぼ勝ち越せない（ぶれの範囲）なら、崩れていない
+      still = sk === lastSupport || gap < O.eps ? still + 1 : 0;
+      if (Date.now() - begin < minMs) still = Math.min(still, O.patience - 1);
+      lastSupport = sk;
+      console.log(`[${elapsed()}] 世代${gen} 試した${evaluated}（うち少ないシードで落とした${raced}） 区切り${archive.size} 追加${added} 挑戦者の最高${challenge.length ? (0.5 + gap).toFixed(3) : 'なし'} 区切りの最高${best.fit.toFixed(3)}（環境に対する得点、0.5で互角）`);
+      printMix('');
+    }
+  }
+  if (still >= O.patience) console.log(`[${elapsed()}] 均衡が${O.patience}回続けて崩れないので、この探索を終える`);
+  return league.filter((_, i) => mix.weights[i] > 0).map((l) => l.team);
+}
+
+const found = []; // { team, run }
+for (let r = 0; r < O.restarts; r++) {
+  reset();
+  if (O.restarts > 1) console.log(`\n[${elapsed()}] ---- 探索 ${r + 1}/${O.restarts}（乱数 ${O.seed + r}）`);
+  for (const team of await explore(createRng(O.seed + r), O.minutes, startTeams)) found.push({ team, run: r + 1 });
+}
+if (O.restarts > 1) {
+  // まとめ：各回の均衡のチームを1つのリーグに入れ、そこからもう少し探す
+  reset();
+  console.log(`\n[${elapsed()}] ---- まとめ：各回の均衡のチーム${found.length}個を1つのリーグに入れて、続きを探す`);
+  const seedTeams = [...startTeams, ...found.map((f) => f.team)];
+  await addToLeague(seedTeams);
+  updateMix();
+  // 各回の答えが、まとめた均衡でどれだけ使われるか（0%の回は、他の回の答えに負けた＝落ち着き損ねた）
+  for (let r = 1; r <= O.restarts; r++) {
+    const keys = new Set(found.filter((f) => f.run === r).map((f) => teamKey(f.team)));
+    const share = league.reduce((s, l, i) => s + (keys.has(l.key) ? mix.weights[i] : 0), 0);
+    console.log(`  探索${r}の答えが、まとめた均衡で使われる割合 ${Math.round(share * 100)}%`);
+  }
+  reset();
+  await explore(createRng(O.seed + 999), O.mergeMinutes, seedTeams);
 }
 
 // ---- 3. 仕上げ ----

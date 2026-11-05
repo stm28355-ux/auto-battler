@@ -117,6 +117,16 @@ test('探索で作るチームは、ルールに合い、切り落としに当�
   done();
 });
 
+test('すぐ近くには「持っている駒を3マスに増やす」変更も入る（1マスずつでは弱くなって届かない形）', () => {
+  const c = v1();
+  const goal = canonicalize(golem(), c);
+  const from = { ...goal, slots: goal.slots.map((s) => (['1,3', '2,1', '3,1'].includes(s.pos.join()) ? { ...s, pieceId: 'c_viper' } : s)) };
+  const keys = new Set();
+  for (const t of createSpace(c).neighborhood(canonicalize(from, c), { pairs: true })) keys.add(teamKey(t));
+  assert.ok(keys.has(teamKey(goal)));
+  done();
+});
+
 test('ナッシュ均衡：じゃんけんは3つを等しく、上位互換があれば下位を使わない', () => {
   const rps = [[0.5, 1, 0], [0, 0.5, 1], [1, 0, 0.5]];
   const r = solveNash(rps);

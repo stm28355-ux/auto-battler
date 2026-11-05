@@ -104,7 +104,13 @@ export function createSpace(catalog, { boards = Object.keys(BOARDS) } = {}) {
       const kind = catalog.piece(from).kind;
       const to = pick(pieces.filter((p) => p.kind === kind && p.id !== from), rng).id;
       t.slots = t.slots.map((s) => (s.pieceId === from ? { ...s, pieceId: to } : s));
-    } else if (r < 0.78) {
+    } else if (r < 0.73) {
+      // 持っている駒を2〜3マスに増やす（「ゴーレムをもう2体」のような、1マスずつでは届きにくい変更）
+      const id = pick(t.slots, rng)?.pieceId;
+      const n = rng() < 0.5 ? 2 : 3;
+      const targets = shuffle(cells, rng).filter((pos) => !t.slots.some((s) => posKey(s.pos) === posKey(pos) && s.pieceId === id)).slice(0, n);
+      t.slots = [...t.slots.filter((s) => !targets.some((pos) => posKey(pos) === posKey(s.pos))), ...targets.map((pos) => ({ pos, pieceId: id }))];
+    } else if (r < 0.82) {
       const donor = pick(others.filter((o) => o.board === t.board && o !== parent), rng);
       if (!donor) return null;
       const row = pick(cells, rng)[0];
@@ -154,6 +160,19 @@ export function createSpace(catalog, { boards = Object.keys(BOARDS) } = {}) {
       yield { ...team, relics: [relics[i], relics[j], relics[k]] };
     }
     if (!pairs) return;
+    // 持っている駒を2〜3マスに増やす（どのマスを、どの手持ちの駒にするか、を全部）
+    const own = [...new Set(team.slots.map((s) => s.pieceId))];
+    for (let a = 0; a < cells.length; a++) for (let b = a + 1; b < cells.length; b++) for (let c = b; c < cells.length; c++) {
+      const targets = c === b ? [cells[a], cells[b]] : [cells[a], cells[b], cells[c]];
+      for (const id of own) {
+        if (targets.some((pos) => at(team, pos) === id)) continue;
+        let t = team;
+        for (const pos of targets) t = place(t, pos, id);
+        if (teamCost(t, catalog) > BOARDS[t.board].costCap) continue;
+        const cc = canonicalize(t, catalog, pieces);
+        if (ok(cc)) yield cc;
+      }
+    }
     // 入れ替え＋1マスの変更（駒をそろえたあと並びを直す、の1手）
     for (let a = 0; a < cells.length; a++) for (let b = a + 1; b < cells.length; b++) {
       if (at(team, cells[a]) === at(team, cells[b])) continue;
