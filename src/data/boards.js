@@ -10,7 +10,7 @@ export const BOARDS = {
     id: 'pentagram',
     name: 'ペンタグラム',
     shape: 'triangle',
-    costCap: 49,
+    costCap: 51,
     cells: [
       [1, 3],
       [2, 1], [2, 2], [2, 3], [2, 4], [2, 5],
