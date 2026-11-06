@@ -25,7 +25,7 @@ export const RELICS = [
     effects: [{ type: 'fullRowBuff', stat: 'atk', value: 0.1, mode: 'pct' }, { type: 'fullRowBuff', stat: 'def', value: 10, mode: 'add' }] },
   { id: 'r_lone', name: '孤高の紋章', icon: '🎖️',
     // マス(2,3)（どのボードにもある中央寄りのマス）のキャラの全能力値
-    effects: ['hp', 'atk', 'def', 'spd'].map((stat) => ({ type: 'cellBuff', pos: [2, 3], stat, value: 0.25, mode: 'pct' })) },
+    effects: ['hp', 'atk', 'def', 'spd'].map((stat) => ({ type: 'cellBuff', pos: [2, 3], stat, value: 0.15, mode: 'pct' })) },
   // 対策用（耐久の構成が、毒を少し入れた相手に負けないための枠。毒を主軸にした構成には勝てない強さにする）
   { id: 'r_antidote', name: '解毒の聖水', icon: '💧',
     effects: [{ type: 'poisonResist', value: 0.2 }, { type: 'poisonChance', value: 0.1 }] },

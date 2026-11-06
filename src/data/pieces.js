@@ -155,7 +155,7 @@ export const ITEMS = [
   // 戦太鼓：行の攻撃速度（道具が行の1マスを使うので、2体ぶんで数える）
   { id: 'i_drum', kind: 'item', name: '戦太鼓', icon: '🥁', atk: 0, def: 0, effects: [buff('rowBuff', 'spd', 'pct', 0.3)] },
   { id: 'i_ward', kind: 'item', name: '結界石', icon: '🔷', atk: 0, def: 0, effects: [buff('teamBuff', 'def', 'add', 10)] },
-  { id: 'i_potion', kind: 'item', name: '回復薬', icon: '🧴', atk: 0, def: 0, effects: [{ type: 'heal', amount: 20, interval: 1 }] },
+  { id: 'i_potion', kind: 'item', name: '回復薬', icon: '🧴', atk: 0, def: 0, effects: [{ type: 'heal', amount: 30, interval: 1 }] },
   // 毒の香炉：毒瓶（隣3体 × 攻撃速度1.2 × 80%）と同じ毒の量。魔導の毒ボーナスは付与1回ごとなので、回数も近づけた
   { id: 'i_censer', kind: 'item', name: '毒の香炉', icon: '🏺', atk: 0, def: 0,
     effects: [{ type: 'pulse', status: 'poison', amount: 1, interval: 0.35 }] },

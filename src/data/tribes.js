@@ -21,10 +21,11 @@ export const TRIBES = {
     name: '魔導',
     color: '#9b6ad6',
     bonuses: {
-      2: [{ type: 'poisonBonus', value: 1 }],
-      3: [{ type: 'poisonBonus', value: 1.5 }],
-      5: [{ type: 'poisonBonus', value: 2 }],
-      7: [{ type: 'poisonBonus', value: 2.5 }],
+      // Ver.3 は Ver.2（1 / 1.5 / 2 / 2.5）から下げた。安い毒の駒を並べると、1回ごとの上乗せが強すぎたため
+      2: [{ type: 'poisonBonus', value: 0.5 }],
+      3: [{ type: 'poisonBonus', value: 1 }],
+      5: [{ type: 'poisonBonus', value: 1.5 }],
+      7: [{ type: 'poisonBonus', value: 2 }],
     },
   },
   beast: {

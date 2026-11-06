@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { TRIBES } from '../src/data/tribes.js';
 import assert from 'node:assert/strict';
 import { PRESET_TEAMS } from '../src/data/presetTeams.js';
 import { createCatalog } from '../src/core/catalog.js';
@@ -223,7 +224,7 @@ test('道具の毒は隣接するキャラの攻撃に乗る。魔導シナジ�
   const t = resolveTeam(team([[[1, 1], 'c_squire'], [[1, 2], 'i_vial']]), catalog);
   assert.deepEqual(t.units[0].onHit.map((e) => e.type), ['poison']);
   const mages = resolveTeam(team([[[1, 1], 'c_apprentice'], [[2, 1], 'c_apprentice']]), catalog);
-  assert.equal(mages.poisonBonus, 1);
+  assert.equal(mages.poisonBonus, TRIBES.mage.bonuses[2][0].value);
 });
 
 test('同じ入力・同じシードなら結果もログも完全に一致する', () => {
