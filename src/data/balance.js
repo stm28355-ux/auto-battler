@@ -23,6 +23,8 @@ export const NEUTRAL_BALANCE = {
   poisonDamage: 1,
   poisonDuration: null,
   paralyzeFactor: 0.5,
+  alternateTies: null,
+  fastestNow: null,
   cost: {
     step: 1,
     ceil: 1,
@@ -45,6 +47,10 @@ export const NEUTRAL_BALANCE = {
     ...EFFECT_COST_DEFAULTS,
     buffRef: null,
     rowBuff: 2,
+    receivers: null,
+    paralyzeWeight: null,
+    lifesteal: null,
+    spdAdd: null,
   },
 };
 
@@ -52,12 +58,13 @@ export const NEUTRAL_BALANCE = {
 export const BALANCE = {
   // ---- 戦闘 ----
   // 通常攻撃のダメージにかける倍率。対戦全体のテンポ（決着までの時間）を決める。
-  damageScale: 1.2,
+  damageScale: 1.35, // Ver.2 は 1.2。最低ダメージを下げた分、決着が遅くなったので上げた（目安10秒）
   // 防御の効き方（spec §2）。1発のダメージ = max(攻撃 × minDamage, 攻撃 − 防御 × armor)。
   // 1発ごとに防御を引くので、手数の多い攻撃ほど防御で止まり、重い一撃は防御を抜ける。
   // armor がない環境（Ver.1）は、攻撃 × 100 ÷ (100 + 防御)。
   armor: 0.6,
-  minDamage: 0.3,
+  // Ver.3 で 0.3 → 0.1。防御で止まる手数型と、毒・防御貫通・重い一撃の差をはっきりさせる
+  minDamage: 0.1,
   // 呪いにかかったチームが受けるダメージ（通常攻撃・毒）の増加分。
   curseAmp: 0.25,
   // ボードの特性。rowBuffMult: そのボードでの行効果の効き目の倍率。
@@ -68,6 +75,11 @@ export const BALANCE = {
   poisonDuration: null,
   // 麻痺中の攻撃速度の倍率。
   paralyzeFactor: 0.3,
+  // 麻痺などの「攻撃時の効果」を受ける相手が2体で同じ割合のとき（ペンタグラムと3行のボード）、交互に狙う（Ver.3）。
+  // ない環境は、いつも上の行を狙う。
+  alternateTies: true,
+  // 麻痺の「攻撃速度が最も高い敵」を、麻痺で遅くなっている分も入れた今の速さで選ぶ（Ver.3）
+  fastestNow: true,
 
   // ---- コスト式（spec §6） ----
   // 駒の「実力」= 各ステータスのコストの合計。コスト = scale × 実力 ^ curve を step 刻みに丸めたもの。
@@ -76,32 +88,52 @@ export const BALANCE = {
   cost: {
     step: 1, // コストの刻み。最低コストもこの値（小数を避けるため、以前の値を2倍にした）
     ceil: 0, // 1なら刻みに切り上げ、0なら四捨五入。切り上げは、安い駒ほど割高になる
-    curve: 1.55, // 実力の指数
-    scale: 1.35, // 係数（コスト2倍化のため以前の2倍）。中くらいの駒（実力2前後）のコストが、おおむね変わらないように決めた
+    // 実力の指数。Ver.2 は 1.55。Ver.3 は 1.25 に下げて、高い駒のコストあたりの実力を上げた
+    curve: 1.25,
+    // 係数。実力2の駒のコストが Ver.2（1.35 × 2^1.55 ≒ 3.95）と同じになるように決めた
+    scale: 1.662,
     // 各ステータスの実力（この値で割った数）
     hp: 400, // キャラ: HP / hp
     atkSpd: 40, // キャラ: 攻撃 × 攻撃速度 / atkSpd
     atkPow: 0.4, // さらに (攻撃 / atkRef) ^ atkPow を掛ける（1発の重さ）
     atkRef: 40,
-    def: 65, // キャラ: 防御 / def
+    def: 80, // キャラ: 防御 / def（Ver.2 は 65。防御は前線にしか効かないので安くした）
     itemAtk: 14, // 道具: 攻撃 / itemAtk（隣の何体にも効くので、キャラの攻撃より高く数える）
-    itemDef: 28, // 道具: 防御 / itemDef
+    itemDef: 35, // 道具: 防御 / itemDef（Ver.2 は 28。キャラの防御と同じ割合で安くした）
     // 特殊効果
     poison: 0.7, // 付与量 × 確率 × poison
     paralyze: 1.0, // 確率 × paralyze（paralyzeSec がない環境で使う）
     paralyzeSec: 0.5, // 確率 × 秒数 × 対象の重み × paralyzeSec
     onHitSpd: 1, // 1ならキャラの「攻撃時」の効果・防御貫通を、攻撃速度倍に数える
-    itemOnHit: 3, // 道具の「攻撃時」の効果・防御貫通は、隣にいる人数の想定ぶん（この倍）に数える
+    // 道具の「攻撃時」の効果・防御貫通は、隣にいる人数 × その攻撃速度の想定ぶん（この倍）に数える。
+    // Ver.3 は「隣3体 × 攻撃速度1.2」（Ver.2 は 3）
+    itemOnHit: 3.6,
     adjAtkMult: 4.5, // 倍率 × adjAtkMult
-    heal: 0.05, // 回復量 / 間隔(秒) × heal
+    // 回復量 / 間隔(秒) × heal。戦闘の目安10秒なら、回復1/秒 = HP10 = 実力0.025（Ver.2 は 0.05）。
+    // ただし回復を積むと戦闘が長引き、回復の価値がさらに上がる（0.025 では修理ロボ4体の時間切れ狙いが最強になった）ので 0.04
+    heal: 0.04,
     ...EFFECT_COST_DEFAULTS,
     curse: 0.4,
     pierce: 1.2,
     // 能力値を上げる効果（隣接・行・全体）を数えるときの基準キャラ
     buffRef: { hp: 400, atk: 45, def: 40 },
     adjBuff: 3,
-    teamBuff: 8,
-    pulsePoison: 1.2,
+    teamBuff: 9, // Ver.2 は 8。全体効果（預言者など）が割安だったので上げた
+    // 効く人数の想定を、能力値と駒の種類で変える（Ver.3）。[能力値 or any][効果][character / item / any]
+    receivers: {
+      // 道具の行効果は、道具がその行の1マスを使うので2体
+      any: { rowBuff: { item: 2 } },
+      // 防御は前線にしか効かない。隣接はキャラ1体（隣の前線）・道具1.5体、行は1体（その行の前線）、全体は3体（3行の前線）
+      def: { adjBuff: { character: 1, item: 1.5 }, rowBuff: { any: 1 }, teamBuff: { any: 3 } },
+    },
+    // 麻痺の対象の重み（Ver.3）。前線は、攻撃の高い駒が前線以外に居やすいので軽くした（Ver.2 は 1）
+    paralyzeWeight: { front: 0.6, random: 1, fastest: 1.2, strongest: 1.2, row: 2.5, all: 4 },
+    // 吸血：割合 × 攻撃 × 攻撃速度 × lifesteal（回復の係数 0.04 × ダメージ倍率 1.2 × 防御で残る割合の想定 0.75）
+    lifesteal: 0.036,
+    // 攻撃速度の固定値（隣接など）は、同じ値の割合（基準キャラは速度1）の spdAdd 倍に数える。遅く重い駒ほど得をするため
+    spdAdd: 1.5,
+    // 定期付与（毒）：付与量 / 間隔 × pulsePoison。攻撃時の毒（1回 0.7）と同じ値段（Ver.2 は 1.2）
+    pulsePoison: 0.7,
     pulseCurse: 1.2,
     rowBuff: 3, // 行効果: 基準キャラ（HP300・攻撃30・防御30・速度1）への効きめ × 同じ行に居る人数の想定(rowBuff)
   },

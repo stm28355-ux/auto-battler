@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { CHARACTERS, ITEMS } from '../src/data/pieces.js';
 import { costBreakdown, pieceCost } from '../src/core/cost.js';
 import { MAX_PIECES, exportPieceJson, exportPiecesJson, parsePieceJson, sanitizePiece } from '../src/storage/pieceJson.js';
-import { MAX_STORED_PIECES, createPieceStore, newPieceId } from '../src/storage/pieceStore.js';
+import { MAX_STORED_PIECES, createPieceStore, newPieceId, pieceKey } from '../src/storage/pieceStore.js';
 import { memoryStorage } from '../src/storage/local.js';
 import { parseTeamJson } from '../src/storage/teamJson.js';
 
@@ -178,4 +178,15 @@ test('保存庫：上限を超える保存は拒否し、容量超過でも落�
   assert.equal(store.load().length, MAX_STORED_PIECES);
   const full = { getItem: () => null, setItem: () => { throw new Error('quota'); } };
   assert.equal(createPieceStore(full).save(chara()), false);
+});
+
+test('自作駒の保存先：Ver.1・Ver.2 は共通、Ver.3 からは別', () => {
+  assert.equal(pieceKey('v1'), pieceKey('v2'));
+  assert.notEqual(pieceKey('v3'), pieceKey('v2'));
+  const storage = memoryStorage();
+  const old = createPieceStore(storage, pieceKey('v2'));
+  const v3 = createPieceStore(storage, pieceKey('v3'));
+  assert.equal(old.save(chara()), true);
+  assert.deepEqual(v3.load(), []);
+  assert.equal(createPieceStore(storage, pieceKey('v1')).load().length, 1);
 });

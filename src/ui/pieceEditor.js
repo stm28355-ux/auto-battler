@@ -2,7 +2,7 @@ import { BUFF_MODES, BUFF_TYPES, EFFECT_TYPES, PARALYZE_TARGETS, PULSE_STATUS, S
 import { TRIBES } from '../data/tribes.js';
 import { CHARACTERS, ITEMS } from '../data/pieces.js';
 import { costBreakdown, pieceCost } from '../core/cost.js';
-import { EFFECT_MAX, MAX_EFFECTS, STAT_RANGES, validatePiece } from '../core/piece.js';
+import { EFFECT_MAX, MAX_EFFECTS, SPD_ADD_RANGE, STAT_RANGES, lifestealAllowed, spdAddAllowed, validatePiece } from '../core/piece.js';
 import { BOARDS } from '../data/boards.js';
 import { MAX_NAME, MAX_JSON_CHARS, exportPieceJson, exportPiecesJson, parsePieceJson, sanitizePiece } from '../storage/pieceJson.js';
 import { newPieceId } from '../storage/pieceStore.js';
@@ -49,9 +49,15 @@ const NEW_PIECE = {
 const buffFields = (target) => [
   { k: 'stat', label: '対象の値', options: STAT_NAMES },
   { k: 'mode', label: '種類', options: BUFF_MODES },
-  { k: 'value', label: `${target}に加算`, min: 1, max: (e) => (e.mode === 'pct' ? EFFECT_MAX.buffPct * 100 : e.stat === 'hp' ? EFFECT_MAX.buffAddHp : EFFECT_MAX.buffAdd), step: 1, scale: (e) => (e.mode === 'pct' ? 100 : 1) },
+  { k: 'value', label: `${target}に加算`,
+    min: (e) => (spdAdd(e) ? SPD_ADD_RANGE[0] : 1),
+    max: (e) => (spdAdd(e) ? SPD_ADD_RANGE[1] : e.mode === 'pct' ? EFFECT_MAX.buffPct * 100 : e.stat === 'hp' ? EFFECT_MAX.buffAddHp : EFFECT_MAX.buffAdd),
+    step: (e) => (spdAdd(e) ? 0.05 : 1),
+    scale: (e) => (e.mode === 'pct' ? 100 : 1) },
 ];
 const buff = (type, stat, mode, value) => () => ({ type, stat, mode, value });
+// 攻撃速度の固定値（Ver.3〜。回/秒をそのまま入力する）
+const spdAdd = (e) => e.stat === 'spd' && e.mode === 'add';
 
 // 効果ごとの初期値と、入力欄。scale: 画面では%で入力する値。min/max/scale は効果によって変わるなら関数にする。
 // hint: 効く範囲（隣接が必要かどうか）。legacy: 過去の環境の効果。新しく選ぶことはできない。
@@ -109,8 +115,15 @@ const EFFECTS = {
     fields: [
       { k: 'status', label: '状態異常', options: PULSE_STATUS },
       { k: 'amount', label: (e) => (e.status === 'curse' ? '秒数' : '付与量'), min: (e) => (e.status === 'curse' ? 0.5 : 1), max: (e) => (e.status === 'curse' ? EFFECT_MAX.seconds : EFFECT_MAX.stacks), step: (e) => (e.status === 'curse' ? 0.5 : 1) },
-      { k: 'interval', label: '間隔(秒)', min: 0.5, max: 30, step: 0.5 },
+      { k: 'interval', label: '間隔(秒)', min: 0.1, max: 30, step: 0.05 },
     ],
+  },
+  lifesteal: {
+    name: '吸血',
+    hint: '自分の攻撃（与えたダメージの割合だけチームHPを回復）',
+    when: lifestealAllowed, // Ver.3〜
+    make: () => ({ type: 'lifesteal', value: 0.3 }),
+    fields: [{ k: 'value', label: '吸血(%)', min: 5, max: 100, step: 5, scale: 100 }],
   },
   adjAtkMult: {
     name: '隣接攻撃倍率（Ver.1）',
@@ -171,7 +184,7 @@ export function initPieceEditor({ store }) {
     const def = EFFECTS[e.type];
     // この駒の種類に付けられる効果だけを選べる（過去の環境の効果は、すでに付いているときだけ出す）
     const choices = Object.entries(EFFECTS)
-      .filter(([id, d]) => id === e.type || (!d.legacy && EFFECT_TYPES[id].on.includes(form.kind)));
+      .filter(([id, d]) => id === e.type || (!d.legacy && (d.when?.() ?? true) && EFFECT_TYPES[id].on.includes(form.kind)));
     const typeSelect = `<select data-e="${i}" data-k="type">${choices
       .map(([id, d]) => `<option value="${id}"${id === e.type ? ' selected' : ''}>${d.name}</option>`).join('')}</select>`;
     const of = (x) => (typeof x === 'function' ? x(e) : x);
@@ -302,8 +315,8 @@ export function initPieceEditor({ store }) {
       // 能力値を上げる効果の種類・対象を変えたら、値の単位が変わるので入れ直す（攻撃速度は割合のみ）
       const effect = form.effects[Number(el.dataset.e)];
       if (BUFF_TYPES.has(effect?.type)) {
-        if (effect.stat === 'spd') effect.mode = 'pct';
-        effect.value = effect.mode === 'pct' ? 0.1 : effect.stat === 'hp' ? 50 : 10;
+        if (effect.stat === 'spd' && !spdAddAllowed()) effect.mode = 'pct';
+        effect.value = effect.mode === 'pct' || spdAdd(effect) ? 0.1 : effect.stat === 'hp' ? 50 : 10;
       } else if (effect?.type === 'pulse') {
         effect.amount = effect.status === 'curse' ? 3 : 1; // 毒なら付与量、呪いなら秒数
       } else {

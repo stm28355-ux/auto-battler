@@ -6,7 +6,7 @@
 // 自動のプレイヤー：報酬はコストの合計が高いセット（遺物は1つ目）を取り、毎層おまかせで組み直す。
 // 負けたら同じチームで再挑戦する。人が考えて組むより弱いので、ここで登れる層は下限の目安。
 import { pathToFileURL } from 'node:url';
-import { applyEnvironment, LATEST } from '../src/data/environment.js';
+import { applyEnvironment, MODE_ENV } from '../src/data/environment.js';
 import { BOARDS } from '../src/data/boards.js';
 import { createCatalog } from '../src/core/catalog.js';
 import { pieceCost } from '../src/core/cost.js';
@@ -55,7 +55,7 @@ function main() {
   const args = process.argv.slice(2);
   const i = args.indexOf('--runs');
   const runs = i >= 0 ? Number(args[i + 1]) : 100;
-  applyEnvironment(LATEST.id);
+  applyEnvironment(MODE_ENV.id);
   const catalog = createCatalog();
   const pct = (x) => `${Math.round(x * 100)}%`.padStart(5);
   console.log('引継ぎ      平均  中央   10層  20層  30層  50層 100層');

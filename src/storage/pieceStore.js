@@ -2,7 +2,10 @@ import { defaultStorage } from './local.js';
 import { sanitizePiece } from './pieceJson.js';
 
 export const MAX_STORED_PIECES = 200;
-const KEY = 'auto-battler.pieces.v1';
+const LEGACY_KEY = 'auto-battler.pieces.v1';
+
+// 自作駒の保存先。Ver.1・Ver.2 は共通（環境を分ける前からの保存先）。Ver.3 からは環境ごとに別にする。
+export const pieceKey = (envId) => (envId === 'v1' || envId === 'v2' || !envId ? LEGACY_KEY : `${LEGACY_KEY}@${envId}`);
 
 // 新しい自作駒のID。標準の駒（c_・i_）とは重ならない。
 export function newPieceId() {
@@ -12,7 +15,7 @@ export function newPieceId() {
 }
 
 // 自作駒の保存庫。壊れたデータや範囲外の駒は読み飛ばす。
-export function createPieceStore(storage = defaultStorage(KEY)) {
+export function createPieceStore(storage = defaultStorage(LEGACY_KEY), KEY = LEGACY_KEY) {
   const read = () => {
     let raw = [];
     try {

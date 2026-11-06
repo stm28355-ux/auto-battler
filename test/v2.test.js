@@ -21,7 +21,7 @@ const item = (id, o = {}) => ({ id, kind: 'item', name: id, icon: '?', atk: 0, d
 const team = (slots, relics = [], board = 'square') => ({ name: 't', board, slots: slots.map(([pos, pieceId]) => ({ pos, pieceId })), relics });
 const close = (actual, expected) => assert.ok(Math.abs(actual - expected) < 1e-9, `${actual} != ${expected}`);
 const latest = (fn) => () => {
-  applyEnvironment(LATEST.id);
+  applyEnvironment('v2');
   useBalance();
   fn();
 };
@@ -111,7 +111,7 @@ test('麻痺のコストは、確率・秒数・対象の範囲で上がる（Ve
   try {
     assert.equal(cost({ ...base, duration: 10 }), cost(base));
   } finally {
-    applyEnvironment(LATEST.id);
+    applyEnvironment('v2');
   }
 }));
 
@@ -156,7 +156,7 @@ test('新しい効果の検査とJSON（範囲外・知らない項目を拒否�
   const bad = [
     { type: 'curse', duration: 0, chance: 0.5 }, { type: 'pierce', value: 2 }, { type: 'adjBuff', stat: 'spd', mode: 'add', value: 1 },
     { type: 'pulse', status: 'paralyze', amount: 1, interval: 1 }, { type: 'pulse', status: 'poison', amount: 1.5, interval: 1 },
-    { type: 'pulse', status: 'poison', amount: 1, interval: 0.1 }, { type: 'paralyze', target: 'everyone', duration: 1, chance: 1 },
+    { type: 'pulse', status: 'poison', amount: 1, interval: 0.05 }, { type: 'paralyze', target: 'everyone', duration: 1, chance: 1 },
   ];
   for (const e of bad) assert.notDeepEqual(validatePiece(item('u_bad', { effects: [e] })), [], JSON.stringify(e));
   const text = JSON.stringify({ format: 'auto-battler/piece', version: 1, piece: item('u_j', { effects: [{ ...ok[4], evil: 1 }] }) });
@@ -188,6 +188,6 @@ test('Ver.1 の駒のコストは、Ver.2 の式を入れても変わらない',
     const actual = Object.fromEntries([...CHARACTERS, ...ITEMS].map((p) => [p.id, pieceCost(p)]));
     assert.deepEqual(actual, V1);
   } finally {
-    applyEnvironment(LATEST.id);
+    applyEnvironment('v2');
   }
 });

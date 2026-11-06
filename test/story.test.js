@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LATEST, applyEnvironment } from '../src/data/environment.js';
+import { MODE_ENV, applyEnvironment } from '../src/data/environment.js';
 import { BOARDS } from '../src/data/boards.js';
 import { CHARACTERS, ITEMS } from '../src/data/pieces.js';
 import { RELICS } from '../src/data/relics.js';
@@ -13,7 +13,7 @@ import { createTeamStore, memoryStorage } from '../src/storage/teamStore.js';
 import { clearedBefore, measure } from '../tools/story.js';
 
 // ストーリーは最新の環境で遊ぶ（spec §14）
-applyEnvironment(LATEST.id);
+applyEnvironment(MODE_ENV.id);
 useBalance();
 const catalog = createCatalog();
 const ids = (list) => list.map((x) => x.id);

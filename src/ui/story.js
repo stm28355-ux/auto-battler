@@ -12,7 +12,7 @@ import { $, escapeHtml, tribeTag } from './format.js';
 //   battle: 対戦タブ（playStory を使う）
 //   teamStore: ストーリー用の編成（通常の保存チームとは別）
 //   storage: 進行状況の保存先
-//   env / latest: いまの環境と最新の環境。ストーリーは最新の環境でだけ遊ぶ
+//   env / latest: いまの環境と最新の環境。ストーリーは決まった環境（MODE_ENV）でだけ遊ぶ
 //   switchToLatest(): 最新の環境に切り替えて、ストーリーを開き直す
 export function initStory({ go, battle, teamStore, storage, env, latest, switchToLatest }) {
   let mod = null; // シナリオ（開いたときに読み込む）
@@ -282,7 +282,7 @@ export function initStory({ go, battle, teamStore, storage, env, latest, switchT
     // ストーリーのタブを開いたとき
     async show() {
       if (env.id !== latest.id) {
-        root().innerHTML = `<section class="panel"><h2>📜 ストーリー</h2><p>ストーリーは最新の環境（${escapeHtml(latest.name)}）で遊びます。いまは${escapeHtml(env.name)}を選んでいます。</p>`
+        root().innerHTML = `<section class="panel"><h2>📜 ストーリー</h2><p>ストーリーは${escapeHtml(latest.name)}の環境で遊びます。いまは${escapeHtml(env.name)}を選んでいます。</p>`
           + `<div class="buttons"><button type="button" class="primary" data-switch-env>${escapeHtml(latest.name)}に切り替えて始める</button></div></section>`;
         return;
       }

@@ -1,8 +1,8 @@
-import { ENVIRONMENTS, LATEST, applyEnvironment } from './data/environment.js';
+import { ENVIRONMENTS, MODE_ENV, applyEnvironment } from './data/environment.js';
 import { STORY_KEY, STORY_SLOTS, STORY_TEAMS_KEY } from './story/progress.js';
 import { ROGUE_META_KEY } from './rogue/config.js';
 import { defaultStorage } from './storage/local.js';
-import { createPieceStore } from './storage/pieceStore.js';
+import { createPieceStore, pieceKey } from './storage/pieceStore.js';
 import { copyTeamsOnce, createTeamStore, listBattleTeams, teamKey } from './storage/teamStore.js';
 import { initBattleScreen } from './ui/battleScreen.js';
 import { initDataView } from './ui/dataView.js';
@@ -24,17 +24,18 @@ const previous = ENVIRONMENTS[ENVIRONMENTS.indexOf(env) - 1];
 const copied = copyTeamsOnce(teamStorage, previous?.id, env.id);
 
 const store = createTeamStore(teamStorage);
-const pieceStore = createPieceStore();
+// 自作駒も環境ごと（Ver.1・Ver.2 は共通、Ver.3 からは別。src/storage/pieceStore.js）
+const pieceStore = createPieceStore(defaultStorage(pieceKey(env.id)), pieceKey(env.id));
 const battleTeams = () => listBattleTeams(store);
 
 const battle = initBattleScreen({ getTeams: battleTeams });
 const teamEditor = initTeamEditor({ store, pieceStore });
 const pieceEditor = initPieceEditor({ store: pieceStore });
 initDataView();
-// ストーリー・ローグライトは最新の環境で遊ぶ。最新の環境に切り替えて、そのモードを開き直す
+// ストーリー・ローグライトは決まった環境（MODE_ENV）で遊ぶ。その環境に切り替えて、そのモードを開き直す
 const switchToLatest = (hash) => () => {
   if (teamEditor.isDirty() && !window.confirm('編集中の内容は失われます。よろしいですか？')) return;
-  envStorage.setItem(ENV_KEY, LATEST.id);
+  envStorage.setItem(ENV_KEY, MODE_ENV.id);
   location.hash = hash;
   location.reload();
 };
@@ -46,7 +47,7 @@ const story = initStory({
   teamStore: storyTeams,
   storage: defaultStorage(STORY_KEY),
   env,
-  latest: LATEST,
+  latest: MODE_ENV,
   switchToLatest: switchToLatest('#story'),
 });
 // ローグライト。編成は挑戦ごと（spec §15）
@@ -55,7 +56,7 @@ const rogue = initRogue({
   battle,
   storage: defaultStorage(ROGUE_META_KEY),
   env,
-  latest: LATEST,
+  latest: MODE_ENV,
   switchToLatest: switchToLatest('#rogue'),
 });
 initRules({ go: (view) => go(view) });

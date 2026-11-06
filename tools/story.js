@@ -8,7 +8,7 @@
 // 「最低限」はサイドイベントを1つもクリアしていないとき、「全部」はそこまでのサイドイベントを全部クリアしたとき。
 // 上位10%：ランダムに組んだチームのうち、勝率の高い1割の平均（人がちゃんと組んだときの目安）。
 import { pathToFileURL } from 'node:url';
-import { applyEnvironment, LATEST } from '../src/data/environment.js';
+import { applyEnvironment, MODE_ENV } from '../src/data/environment.js';
 import { BOARDS } from '../src/data/boards.js';
 import { RELICS } from '../src/data/relics.js';
 import { createCatalog } from '../src/core/catalog.js';
@@ -74,7 +74,7 @@ function main() {
     const i = args.indexOf(`--${name}`);
     return i >= 0 ? Number(args[i + 1]) : fallback;
   };
-  applyEnvironment(LATEST.id);
+  applyEnvironment(MODE_ENV.id);
   const catalog = createCatalog();
   const pct = (x) => `${Math.round(x * 100)}%`.padStart(4);
   console.log('イベント                     相手（強さ）            相手のコスト/自分の上限   最低限: 平均 上位10%   全部: 平均 上位10%');

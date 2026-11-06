@@ -12,6 +12,9 @@ export const EFFECT_TYPES = {
   teamBuff: { name: '全体効果', on: ['character', 'item'] },
   heal: { name: '回復', on: ['character', 'item', 'relic'] },
   pulse: { name: '定期付与', on: ['character', 'item'] },
+  lifesteal: { name: '吸血', on: ['character'] }, // Ver.3
+  cellBuff: { name: 'マスの強化', on: ['relic'] }, // Ver.3
+  poisonChance: { name: '毒の確率', on: ['relic'] }, // Ver.3
   adjAtkMult: { name: '隣接攻撃倍率', on: ['character', 'item'], legacy: true },
   statBuff: { name: 'ステータス強化', on: ['relic'] },
   fullRowBuff: { name: '3体の行の強化', on: ['relic'] },
@@ -74,6 +77,12 @@ export function describeEffect(e) {
       return e.status === 'curse'
         ? `${e.interval}秒ごとに相手へ呪い${e.amount}秒`
         : `${e.interval}秒ごとに相手へ毒+${e.amount}`;
+    case 'lifesteal':
+      return `攻撃で与えたダメージの${pct(e.value)}だけHP回復`;
+    case 'cellBuff':
+      return `マス(${e.pos.join(',')})のキャラの${STAT_NAMES[e.stat]}+${buffValue(e)}`;
+    case 'poisonChance':
+      return `確率のある攻撃時の毒の確率+${pct(e.value)}`;
     case 'statBuff':
       return `${scopeText(e)}の${STAT_NAMES[e.stat]}+${buffValue(e)}`;
     case 'fullRowBuff':

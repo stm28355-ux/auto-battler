@@ -21,9 +21,10 @@ export const foldOf = (boardId, foeBoardId, row) => (folded(boardId, foeBoardId)
 //   atk: その計算行へ向かう秒間攻撃（防御を引く前。実効攻撃 × 攻撃倍率 × 攻撃速度 × 割合の合計）
 //   def: その計算行の防御（割り当てられた前線の防御の、割合による加重平均。前線がなければ null）
 //   target: その計算行で攻撃を受ける代表の駒（割合がいちばん大きい前線。同じなら小さい行）
+//   targets: 割合がいちばん大きい前線の全員（同じ割合が2体いるとき、攻撃時の効果を交互に当てるため。Ver.3）
 export function rowStats(units, boardId, foeBoardId) {
   const count = calcRowCount(boardId, foeBoardId);
-  const rows = Array.from({ length: count }, (_, i) => ({ row: i + 1, atk: 0, def: null, target: null, from: [], _w: 0, _d: 0, _share: 0 }));
+  const rows = Array.from({ length: count }, (_, i) => ({ row: i + 1, atk: 0, def: null, target: null, targets: [], from: [], _w: 0, _d: 0, _share: 0 }));
 
   const fronts = new Map();
   for (const u of units) {
@@ -44,6 +45,9 @@ export function rowStats(units, boardId, foeBoardId) {
       if (share > row._share) {
         row._share = share;
         row.target = front;
+        row.targets = [front];
+      } else if (share === row._share) {
+        row.targets.push(front);
       }
     }
   }
@@ -59,6 +63,6 @@ export function fillRows(rows) {
       if (!other.target) continue;
       if (!best || Math.abs(other.row - row.row) < Math.abs(best.row - row.row)) best = other;
     }
-    return best ? { ...row, def: best.def, target: best.target } : row;
+    return best ? { ...row, def: best.def, target: best.target, targets: best.targets } : row;
   });
 }

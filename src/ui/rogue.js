@@ -18,7 +18,7 @@ import { $, effectsText, escapeHtml, pieceSummary, tribeTag } from './format.js'
 //   go(view, mode): 画面を切り替える（'team' + 'rogue' で挑戦中の編成、'battle' + 'story' で対戦）
 //   battle: 対戦タブ（playStory を使う）
 //   storage: 引継ぎと挑戦中のデータの保存先
-//   env / latest / switchToLatest: ローグライトは最新の環境でだけ遊ぶ
+//   env / latest / switchToLatest: ローグライトは決まった環境（MODE_ENV）でだけ遊ぶ
 export function initRogue({ go, battle, storage, env, latest, switchToLatest }) {
   const catalog = createCatalog();
   const store = createRogueStore(storage, catalog);
@@ -399,7 +399,7 @@ export function initRogue({ go, battle, storage, env, latest, switchToLatest }) 
     // ローグライトのタブを開いたとき
     show() {
       if (env.id !== latest.id) {
-        root().innerHTML = `<section class="panel"><h2>🗼 ローグライト</h2><p>ローグライトは最新の環境（${escapeHtml(latest.name)}）で遊びます。いまは${escapeHtml(env.name)}を選んでいます。</p>`
+        root().innerHTML = `<section class="panel"><h2>🗼 ローグライト</h2><p>ローグライトは${escapeHtml(latest.name)}の環境で遊びます。いまは${escapeHtml(env.name)}を選んでいます。</p>`
           + `<div class="buttons"><button type="button" class="primary" data-switch-env>${escapeHtml(latest.name)}に切り替えて始める</button></div></section>`;
         meta = meta ?? store.loadMeta();
         return;

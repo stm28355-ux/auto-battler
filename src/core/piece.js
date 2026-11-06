@@ -1,5 +1,12 @@
 import { EFFECT_TYPES, PARALYZE_TARGETS, PULSE_STATUS, STAT_NAMES } from '../data/effects.js';
 import { TRIBES } from '../data/tribes.js';
+import { BALANCE } from '../data/balance.js';
+
+// 攻撃速度を固定値で上げる効果は、その査定（cost.spdAdd）がある環境（Ver.3〜）だけで作れる
+export const spdAddAllowed = () => BALANCE.cost?.spdAdd != null;
+export const SPD_ADD_RANGE = [0.05, 1];
+// 吸血も、その査定（cost.lifesteal）がある環境（Ver.3〜）だけ
+export const lifestealAllowed = () => BALANCE.cost?.lifesteal != null;
 
 // 駒作成で入力できる範囲（spec §3）。遊びとして、1つの値だけでもコスト上限（いちばん高いボード）まで上げられる広さにする。
 // 強すぎる駒はコストが上限を超えて置けなくなるので、範囲で強さを抑える必要はない。
@@ -47,7 +54,11 @@ function validateEffect(e, kind) {
       const name = type.name;
       if (!has(STAT_NAMES, e.stat)) return `${name}の対象ステータスが不正です（${e.stat}）`;
       if (e.mode !== 'add' && e.mode !== 'pct') return `${name}は固定値(add)か割合(pct)にしてください`;
-      if (e.mode === 'add' && e.stat === 'spd') return `${name}で攻撃速度は割合のみ指定できます`;
+      if (e.mode === 'add' && e.stat === 'spd') {
+        if (!spdAddAllowed()) return `${name}で攻撃速度は割合のみ指定できます`;
+        if (!inRange(e.value, SPD_ADD_RANGE)) return `${name}の攻撃速度の固定値は${SPD_ADD_RANGE[0]}〜${SPD_ADD_RANGE[1]}にしてください`;
+        break;
+      }
       if (!inRange(e.value, e.mode === 'pct' ? [0.01, EFFECT_MAX.buffPct] : [1, e.stat === 'hp' ? EFFECT_MAX.buffAddHp : EFFECT_MAX.buffAdd])) {
         return e.mode === 'pct'
           ? `${name}の割合は1〜${EFFECT_MAX.buffPct * 100}%にしてください`
@@ -59,11 +70,15 @@ function validateEffect(e, kind) {
       if (!inRange(e.amount, [1, 1000])) return '回復量は1〜1000にしてください';
       if (!inRange(e.interval, [0.1, 30])) return '回復間隔は0.1〜30秒にしてください';
       break;
+    case 'lifesteal':
+      if (!lifestealAllowed()) return '吸血はこの環境では使えません';
+      if (!inRange(e.value, [0.05, 1])) return '吸血は5〜100%にしてください';
+      break;
     case 'pulse':
       if (!has(PULSE_STATUS, e.status)) return `定期付与の状態異常が不正です（${e.status}）`;
       if (e.status === 'poison' && (!Number.isInteger(e.amount) || e.amount < 1 || e.amount > EFFECT_MAX.stacks)) return `定期付与の毒の量は1〜${EFFECT_MAX.stacks}の整数にしてください`;
       if (e.status === 'curse' && !inRange(e.amount, [0.5, EFFECT_MAX.seconds])) return `定期付与の呪いの秒数は0.5〜${EFFECT_MAX.seconds}にしてください`;
-      if (!inRange(e.interval, [0.5, 30])) return '定期付与の間隔は0.5〜30秒にしてください';
+      if (!inRange(e.interval, [0.1, 30])) return '定期付与の間隔は0.1〜30秒にしてください';
       break;
   }
   return null;

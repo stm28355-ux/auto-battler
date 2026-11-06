@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LATEST, applyEnvironment } from '../src/data/environment.js';
+import { MODE_ENV, applyEnvironment } from '../src/data/environment.js';
 import { useBalance } from '../src/data/balance.js';
 import { createCatalog } from '../src/core/catalog.js';
 import { pieceCost } from '../src/core/cost.js';
@@ -18,7 +18,7 @@ import {
 import { memoryStorage } from '../src/storage/local.js';
 
 // ローグライトは最新の環境で遊ぶ（spec §15）
-applyEnvironment(LATEST.id);
+applyEnvironment(MODE_ENV.id);
 useBalance();
 const catalog = createCatalog();
 const T = (board, cells, relics = []) => ({ name: 't', board, slots: Object.entries(cells).map(([k, pieceId]) => ({ pos: k.split(',').map(Number), pieceId })), relics });

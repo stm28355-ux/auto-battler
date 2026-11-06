@@ -33,14 +33,18 @@ export function captureEnvironment() {
 
 // 最新（調整中）の環境。読み込んだ時点のデータファイルの中身を控えておく（切り替えたあと戻すため）。
 export const LATEST = {
-  id: 'v2',
-  name: 'Ver.2',
+  id: 'v3',
+  name: 'Ver.3',
   status: '調整中',
   note: '最新の環境。バランス調整はこの環境に入る。',
   ...captureEnvironment(),
 };
 
 export const ENVIRONMENTS = [...SNAPSHOTS, LATEST];
+
+// ストーリー・ローグライトで遊ぶ環境。相手のチームや報酬はこの環境のコストで組んである。
+// Ver.3 は調整中なので、調整が終わるまで Ver.2 で遊ぶ（終わったら、相手のチームを組み直して LATEST にする）。
+export const MODE_ENV = ENVIRONMENTS.find((e) => e.id === 'v2');
 export const DEFAULT_ENV = LATEST.id;
 
 let active = LATEST.id;

@@ -41,7 +41,7 @@ function initSide(team, catalog) {
     dealt: 0, // 相手に与えたダメージの合計（毒を含む）
     poisonDealt: 0, // そのうち毒によるダメージ（バランス調整で見る）
     curseSteps: 0, // このチームにかかっている呪いの残りステップ数
-    units: resolved.units.map((unit) => ({ unit, progress: 0, paraSteps: 0 })),
+    units: resolved.units.map((unit) => ({ unit, progress: 0, paraSteps: 0, hits: 0 })),
     healers: resolved.healers.map((h) => ({ amount: h.amount, every: stepsOf(h.interval), counter: 0, source: h.source })),
     pulses: resolved.pulses.map((p) => ({ ...p, every: stepsOf(p.interval), counter: 0 })),
   };
@@ -54,8 +54,10 @@ function pickParalyzeTargets(effect, victim, front, rng) {
       return [victim.units[Math.floor(rng() * victim.units.length)]];
     case 'fastest':
     case 'strongest': {
-      const key = effect.target === 'fastest' ? 'spd' : 'atk';
-      return [victim.units.reduce((best, s) => (s.unit[key] > best.unit[key] ? s : best))];
+      // Ver.3（fastestNow）は、麻痺で遅くなっている分も入れた今の攻撃速度で比べる
+      const now = (s) => s.unit.spd * (s.paraSteps > 0 ? BALANCE.paralyzeFactor : 1);
+      const value = effect.target === 'strongest' ? (s) => s.unit.atk : BALANCE.fastestNow ? now : (s) => s.unit.spd;
+      return [victim.units.reduce((best, s) => (value(s) > value(best) ? s : best))];
     }
     case 'row':
       return victim.units.filter((s) => s.unit.row === front.unit.row);
@@ -187,24 +189,44 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
       // 攻撃は、自分の行が振り分けられた計算行ごとに、割合ぶんずつ当たる
       let front = null;
       let frontShare = 0;
+      const ties = []; // 攻撃時の効果を受ける候補（割合がいちばん大きい相手。Ver.3 は同じ割合なら交互に狙う）
+      let dealtNow = 0;
       for (const [calc, share] of foldOf(boards[key], boards[foeKey], s.unit.row)) {
         const row = foe.rows[calc - 1];
         const target = foe.units[row.target.index];
         const dmg = share * hitDamage(s.unit.atk * s.unit.atkMult * BALANCE.damageScale, row.def, s.unit.pierce ?? 0);
         damage[foeKey] += dmg;
         own.dealt += dmg;
+        dealtNow += dmg;
         credit(key, s.unit, 'attack', dmg);
         credit(foeKey, target.unit, 'taken', dmg);
         emit({ type: 'attack', side: key, from: s.unit.pos, to: target.unit.pos, dmg });
         if (share > frontShare) {
           frontShare = share;
           front = target;
+          ties.length = 0;
+        }
+        if (share === frontShare) {
+          for (const t of row.targets?.length ? row.targets : [row.target]) {
+            const st = foe.units[t.index];
+            if (!ties.includes(st)) ties.push(st);
+          }
         }
       }
+      if (BALANCE.alternateTies && ties.length > 1) front = ties[s.hits % ties.length];
+      s.hits += 1;
 
       for (const effect of s.unit.onHit) {
-        if (effect.chance < 1 && rng() >= effect.chance) continue;
+        // 解毒の聖水（Ver.3）：確率のある毒の確率を上げる
+        const chance = effect.type === 'poison' && effect.chance < 1 ? Math.min(1, effect.chance + own.resolved.poisonChance) : effect.chance;
+        if (chance < 1 && rng() >= chance) continue;
         inflict(key, effect, front, s.unit);
+      }
+      // 吸血（Ver.3）：与えたダメージの割合だけ、自分のチームを回復する
+      if (s.unit.lifesteal > 0 && dealtNow > 0) {
+        const amount = dealtNow * s.unit.lifesteal;
+        heal[key] += amount;
+        healBy[key].push({ amount, source: { kind: 'piece', id: s.unit.piece.id, pos: s.unit.pos } });
       }
     }
 

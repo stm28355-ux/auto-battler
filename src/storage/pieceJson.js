@@ -33,6 +33,7 @@ const EFFECT_FIELDS = {
   teamBuff: ['stat', 'mode', 'value'],
   heal: ['amount', 'interval'],
   pulse: ['status', 'amount', 'interval'],
+  lifesteal: ['value'],
 };
 const MAX_EFFECTS_READ = 8; // 多すぎる配列は、検査の前に切り詰める
 const MAX_ICON_CODEPOINTS = 8;

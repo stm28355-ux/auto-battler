@@ -47,6 +47,8 @@ export function resolveTeam(team, catalog) {
   for (const { pos, piece } of placed) if (piece.kind === 'character') perRow.set(pos[0], (perRow.get(pos[0]) ?? 0) + 1);
   const fullRows = new Set([...perRow].filter(([, n]) => n >= 3).map(([r]) => r));
   const fullRowBuffs = sideEffects.filter((e) => e.type === 'fullRowBuff');
+  // マスの強化（遺物。Ver.3）：決まったマスにいるキャラクター
+  const cellBuffs = sideEffects.filter((e) => e.type === 'cellBuff');
 
   const units = [];
   for (const { pos, piece } of placed) {
@@ -85,6 +87,7 @@ export function resolveTeam(team, catalog) {
       for (const b of rowBuffs) if (b.row === row) apply(b);
       for (const b of near) apply(b);
       if (fullRows.has(row)) for (const b of fullRowBuffs) apply(b);
+      for (const b of cellBuffs) if (posKey(b.pos) === posKey(pos)) apply(b);
       return (base + add) * (1 + pct);
     };
 
@@ -100,6 +103,7 @@ export function resolveTeam(team, catalog) {
       spd: buffed('spd', piece.spd),
       atkMult,
       pierce: Math.min(1, pierce),
+      lifesteal: sumOf(effectsOf(piece, 'lifesteal')),
       onHit,
     });
   }
@@ -128,6 +132,7 @@ export function resolveTeam(team, catalog) {
     poisonBonus: sideSum('poisonBonus'),
     paralyzeBonus: sideSum('paralyzeBonus'),
     poisonResist: Math.min(0.9, sideSum('poisonResist')),
+    poisonChance: sideSum('poisonChance'),
     maxHp,
   };
 }

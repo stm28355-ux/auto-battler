@@ -7,6 +7,7 @@ import { EFFECT_TYPES, ON_HIT_TYPES } from '../data/effects.js';
 const ceil = (x) => Math.ceil(x - 1e-9);
 
 // 麻痺の対象ごとの重み（何体に効くか）。秒数も数える環境（cost.paralyzeSec がある環境）で使う。
+// cost.paralyzeWeight がある環境（Ver.3〜）はその値を使う。
 const PARALYZE_WEIGHT = { front: 1, random: 1, fastest: 1.2, strongest: 1.2, row: 2.5, all: 4 };
 
 // 係数。過去の環境のバランス値にない係数（新しい効果のもの）は、既定値を使う。
@@ -25,8 +26,18 @@ function buffGain(e, c) {
     hp: (add ? e.value : e.value * ref.hp) / c.hp,
     atk: (add ? e.value : e.value * ref.atk) / c.atkSpd,
     def: (add ? e.value : e.value * ref.def) / c.def,
-    spd: (e.value * ref.atk) / c.atkSpd,
+    // 攻撃速度の固定値（Ver.3〜）は、基準キャラ（速度1）なら同じ割合と同じ。遅く重い駒ほど得なので cost.spdAdd 倍に数える
+    spd: ((e.value * ref.atk) / c.atkSpd) * (add ? c.spdAdd ?? 1 : 1),
   }[e.stat] ?? 0;
+}
+
+// 能力値を上げる効果が、何体に効くと数えるか（Ver.3〜は cost.receivers で細かく決める）。
+//   防御は前線にしか意味がないので、効く人数を少なく数える。道具の行効果は、道具がその行の1マスを使うので少なく数える。
+function receivers(e, piece, c) {
+  const r = c.receivers;
+  if (!r) return c[e.type];
+  const kind = piece.kind === 'item' ? 'item' : 'character';
+  return r[e.stat]?.[e.type]?.[kind] ?? r[e.stat]?.[e.type]?.any ?? r.any?.[e.type]?.[kind] ?? c[e.type];
 }
 
 // piece: 効果を持つ駒。「攻撃時」の効果と防御貫通は、攻撃の回数に比例して効くので、
@@ -44,7 +55,7 @@ export function effectCost(e, piece = { kind: 'character', spd: 1 }) {
     case 'paralyze':
       return spread * (c.paralyzeSec == null
         ? c.paralyze * e.chance
-        : c.paralyzeSec * e.chance * e.duration * (PARALYZE_WEIGHT[e.target] ?? 1));
+        : c.paralyzeSec * e.chance * e.duration * ((c.paralyzeWeight ?? PARALYZE_WEIGHT)[e.target] ?? 1));
     case 'curse':
       return spread * c.curse * e.chance * e.duration;
     case 'pierce':
@@ -57,7 +68,10 @@ export function effectCost(e, piece = { kind: 'character', spd: 1 }) {
     case 'rowBuff':
     case 'teamBuff':
       // 効く人数の想定（隣接・同じ行・全員）を掛ける
-      return c[e.type] * buffGain(e, c);
+      return receivers(e, piece, c) * buffGain(e, c);
+    case 'lifesteal':
+      // 回復量 ≒ 吸血の割合 × 攻撃 × 攻撃速度（防御で減る分は cost.lifesteal に入れてある）
+      return c.lifesteal * e.value * (piece.atk ?? 40) * (piece.spd ?? 1);
     case 'pulse':
       return ((e.status === 'curse' ? c.pulseCurse : c.pulsePoison) * e.amount) / e.interval;
     default:
