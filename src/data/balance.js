@@ -86,11 +86,11 @@ export const BALANCE = {
   poisonDuration: null,
   // 麻痺中の攻撃速度の倍率。
   paralyzeFactor: 0.3,
-  // 試し（null なら使わない）：麻痺の倍率を、かかった駒の攻撃速度で変える。
-  //   攻撃速度 paralyzeFastSpd 以上は paralyzeFactor、paralyzeSlowSpd 以下は paralyzeSlowFactor、その間はまっすぐつなぐ
-  paralyzeSlowFactor: null,
+  // 麻痺の倍率を、かかった駒の攻撃速度で変える（遅い駒ほど効きにくい。傾斜のある方が型が多く出た：v3-h 15チーム / 傾斜なし v3-i 6チーム）。
+  //   攻撃速度 paralyzeFastSpd 以上は paralyzeFactor、paralyzeSlowSpd 以下は paralyzeSlowFactor、その間はまっすぐつなぐ（速度1 ≒ 0.41倍）
+  paralyzeSlowFactor: 0.7,
   paralyzeSlowSpd: 0.5,
-  paralyzeFastSpd: 2,
+  paralyzeFastSpd: 1.2,
   // 麻痺などの「攻撃時の効果」を受ける相手が2体で同じ割合のとき（ペンタグラムと3行のボード）、交互に狙う（Ver.3）。
   // ない環境は、いつも上の行を狙う。
   alternateTies: true,
@@ -159,9 +159,9 @@ export const BALANCE = {
     cureParalyze: 0.3,
     // 毒で攻撃+：相手の毒の蓄積の想定
     venomStacks: 12,
-    // 道具を磨く：隣の道具の攻撃・防御の想定（実力）× 割合
-    itemAmpAtk: 1.6,
-    itemAmpDef: 0.8,
+    // 道具を磨く：隣の道具の攻撃・防御の想定（実力）× 割合。スクエア中央なら道具4つ×それぞれ2〜3体に効くので、道具1つぶんの値段（1.6 / 0.8）では約4倍の割安だった
+    itemAmpAtk: 6,
+    itemAmpDef: 2,
     // 麻痺の対象の重み（Ver.3）。前線は、攻撃の高い駒が前線以外に居やすいので軽くした（Ver.2 は 1）
     paralyzeWeight: { front: 0.6, random: 1, fastest: 1.2, strongest: 1.2, row: 2.5, all: 4 },
     // 吸血：割合 × 攻撃 × 攻撃速度 × lifesteal（回復の係数 0.04 × ダメージ倍率 1.2 × 防御で残る割合の想定 0.75）

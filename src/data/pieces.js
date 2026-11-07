@@ -18,12 +18,12 @@ export const CHARACTERS = [
   // 見習い剣士（前・3）：行のHP。マスの多いペンタグラムで使いやすい
   { id: 'c_squire', kind: 'character', name: '見習い剣士', icon: '🗡️', tribe: 'warrior', hp: 240, atk: 22, def: 25, spd: 1.0,
     effects: [buff('rowBuff', 'hp', 'add', 40)] },
-  // 騎士（前・5）：HPと防御。鎧磨き（隣の道具の防御+50%）
-  { id: 'c_knight', kind: 'character', name: '騎士', icon: '🤺', tribe: 'warrior', hp: 340, atk: 20, def: 50, spd: 0.8,
-    effects: [{ type: 'adjBuff', stat: 'hp', mode: 'pct', value: 0.1 }, { type: 'itemAmp', stat: 'def', value: 0.5 }] },
-  // 狂戦士（後ろ・6）：攻撃と少しの防御貫通。研磨（隣の道具の攻撃+30%）
-  { id: 'c_berserker', kind: 'character', name: '狂戦士', icon: '🪓', tribe: 'warrior', hp: 210, atk: 53, def: 10, spd: 1.0,
-    effects: [{ type: 'pierce', value: 0.15 }, { type: 'itemAmp', stat: 'atk', value: 0.3 }] },
+  // 騎士（前・5）：HPと防御。鎧磨き（隣の道具の防御+30%）
+  { id: 'c_knight', kind: 'character', name: '騎士', icon: '🤺', tribe: 'warrior', hp: 300, atk: 18, def: 45, spd: 0.8,
+    effects: [{ type: 'adjBuff', stat: 'hp', mode: 'pct', value: 0.1 }, { type: 'itemAmp', stat: 'def', value: 0.3 }] },
+  // 狂戦士（後ろ・6）：攻撃と少しの防御貫通。研磨（隣の道具の攻撃+15%）
+  { id: 'c_berserker', kind: 'character', name: '狂戦士', icon: '🪓', tribe: 'warrior', hp: 180, atk: 44, def: 10, spd: 1.0,
+    effects: [{ type: 'pierce', value: 0.15 }, { type: 'itemAmp', stat: 'atk', value: 0.15 }] },
   // 聖騎士（後ろ・7）：行の防御（その行の前線を守る）と、手当て（毒を減らし麻痺を解く）
   { id: 'c_paladin', kind: 'character', name: '聖騎士', icon: '⚜️', tribe: 'warrior', hp: 480, atk: 48, def: 15, spd: 0.9,
     effects: [{ type: 'rowBuff', stat: 'def', mode: 'add', value: 15 }, { type: 'cure', interval: 2, poison: 2 }] },
@@ -121,9 +121,9 @@ export const CHARACTERS = [
   // エルフ（後ろ・3）：防御貫通40%の安い対・壁役
   { id: 'c_elf', kind: 'character', name: 'エルフ', icon: '🧝', tribe: 'neutral', hp: 160, atk: 20, def: 5, spd: 1.3,
     effects: [{ type: 'pierce', value: 0.4 }] },
-  // ドワーフ（両方・7）：鍛冶（隣の道具の攻撃・防御+40%）
-  { id: 'c_dwarf', kind: 'character', name: 'ドワーフ', icon: '⛏️', tribe: 'neutral', hp: 430, atk: 31, def: 40, spd: 0.9,
-    effects: [{ type: 'itemAmp', stat: 'atk', value: 0.4 }, { type: 'itemAmp', stat: 'def', value: 0.4 }] },
+  // ドワーフ（両方・7）：鍛冶（隣の道具の攻撃+15%・防御+25%。スクエア中央で道具4つを磨けるので控えめ）
+  { id: 'c_dwarf', kind: 'character', name: 'ドワーフ', icon: '⛏️', tribe: 'neutral', hp: 350, atk: 25, def: 35, spd: 0.9,
+    effects: [{ type: 'itemAmp', stat: 'atk', value: 0.15 }, { type: 'itemAmp', stat: 'def', value: 0.25 }] },
   // 吸血鬼（後ろ・10）：与えたダメージの50%を回復し、隣のキャラにも吸血25%を配る
   { id: 'c_vampire', kind: 'character', name: '吸血鬼', icon: '🧛', tribe: 'neutral', hp: 380, atk: 38, def: 20, spd: 1.1,
     effects: [{ type: 'lifesteal', value: 0.5 }, { type: 'lifestealAura', value: 0.25 }] },
@@ -152,8 +152,8 @@ export const ITEMS = [
   // 魔剣（8）：攻撃と、隣の攻撃速度+0.15（固定値）。攻撃の道具のいちばん上（鉄の剣 < 槍 < 魔剣）
   { id: 'i_blade', kind: 'item', name: '魔剣', icon: '🗡️', atk: 32, def: 0,
     effects: [{ type: 'adjBuff', stat: 'spd', mode: 'add', value: 0.15 }] },
-  { id: 'i_armor', kind: 'item', name: '聖鎧', icon: '🥋', atk: 0, def: 50,
-    effects: [{ type: 'adjBuff', stat: 'hp', mode: 'add', value: 200 }] },
+  { id: 'i_armor', kind: 'item', name: '聖鎧', icon: '🥋', atk: 0, def: 60,
+    effects: [{ type: 'adjBuff', stat: 'hp', mode: 'add', value: 150 }] },
 
   // どこに置いても効く
   { id: 'i_sword', kind: 'item', name: '鉄の剣', icon: '⚔️', atk: 16, def: 0,
