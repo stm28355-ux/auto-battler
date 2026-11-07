@@ -41,10 +41,26 @@ function initSide(team, catalog) {
     dealt: 0, // 相手に与えたダメージの合計（毒を含む）
     poisonDealt: 0, // そのうち毒によるダメージ（バランス調整で見る）
     curseSteps: 0, // このチームにかかっている呪いの残りステップ数
-    units: resolved.units.map((unit) => ({ unit, progress: 0, paraSteps: 0, hits: 0 })),
+    units: resolved.units.map((unit) => ({ unit, progress: 0, paraSteps: 0, hits: 0, rally: (unit.rally ?? []).map((r) => ({ ...r, steps: stepsOf(r.duration) })) })),
     healers: resolved.healers.map((h) => ({ amount: h.amount, every: stepsOf(h.interval), counter: 0, source: h.source })),
     pulses: resolved.pulses.map((p) => ({ ...p, every: stepsOf(p.interval), counter: 0 })),
+    cures: (resolved.cures ?? []).map((c) => ({ ...c, every: stepsOf(c.interval), counter: 0 })),
   };
+}
+
+// 麻痺中の攻撃速度の倍率。paralyzeSlowFactor がある環境は、かかった駒の攻撃速度で変える（速い駒ほどよく効く）
+function paraFactor(spd) {
+  const B = BALANCE;
+  if (B.paralyzeSlowFactor == null) return B.paralyzeFactor;
+  const k = Math.min(1, Math.max(0, (spd - B.paralyzeSlowSpd) / (B.paralyzeFastSpd - B.paralyzeSlowSpd)));
+  return B.paralyzeSlowFactor + (B.paralyzeFactor - B.paralyzeSlowFactor) * k;
+}
+
+// 号令（Ver.3）：開始から決まったステップまで、その値を (1 + 合計) 倍にする
+function rallyMult(s, stat, step) {
+  let m = 1;
+  for (const r of s.rally) if (r.stat === stat && step <= r.steps) m += r.value;
+  return m;
 }
 
 // 麻痺させる相手キャラの一覧
@@ -55,7 +71,7 @@ function pickParalyzeTargets(effect, victim, front, rng) {
     case 'fastest':
     case 'strongest': {
       // Ver.3（fastestNow）は、麻痺で遅くなっている分も入れた今の攻撃速度で比べる
-      const now = (s) => s.unit.spd * (s.paraSteps > 0 ? BALANCE.paralyzeFactor : 1);
+      const now = (s) => s.unit.spd * (s.paraSteps > 0 ? paraFactor(s.unit.spd) : 1);
       const value = effect.target === 'strongest' ? (s) => s.unit.atk : BALANCE.fastestNow ? now : (s) => s.unit.spd;
       return [victim.units.reduce((best, s) => (value(s) > value(best) ? s : best))];
     }
@@ -173,7 +189,7 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
       for (const s of sides[key].units) {
         const slowed = s.paraSteps > 0;
         if (slowed) s.paraSteps -= 1;
-        s.progress += s.unit.spd * (slowed ? BALANCE.paralyzeFactor : 1) * DT;
+        s.progress += s.unit.spd * rallyMult(s, 'spd', state.step) * (slowed ? paraFactor(s.unit.spd) : 1) * DT;
         if (s.progress >= 1 - EPS) {
           s.progress -= 1;
           attackers.push({ key, s });
@@ -191,10 +207,12 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
       let frontShare = 0;
       const ties = []; // 攻撃時の効果を受ける候補（割合がいちばん大きい相手。Ver.3 は同じ割合なら交互に狙う）
       let dealtNow = 0;
+      // 毒で攻撃+（Ver.3）は相手の今の毒の蓄積で、号令は開始からの時間で、攻撃が変わる
+      const atkNow = (s.unit.atk + (s.unit.venomAtk ?? 0) * foe.poison) * rallyMult(s, 'atk', state.step);
       for (const [calc, share] of foldOf(boards[key], boards[foeKey], s.unit.row)) {
         const row = foe.rows[calc - 1];
         const target = foe.units[row.target.index];
-        const dmg = share * hitDamage(s.unit.atk * s.unit.atkMult * BALANCE.damageScale, row.def, s.unit.pierce ?? 0);
+        const dmg = share * hitDamage(atkNow * s.unit.atkMult * BALANCE.damageScale, row.def, s.unit.pierce ?? 0);
         damage[foeKey] += dmg;
         own.dealt += dmg;
         dealtNow += dmg;
@@ -275,6 +293,28 @@ export function createBattle(teamA, teamB, catalog, { seed = 1, log = false } = 
           healBy[key].push(h);
           emit({ type: 'heal', side: key, amount: h.amount });
         }
+      }
+    }
+
+    // 4b. 手当て（Ver.3）：味方の毒を減らし（新しく付いたものから）、麻痺のいちばん長い1体を解く
+    for (const key of SIDES) {
+      const side = sides[key];
+      for (const c of side.cures) {
+        c.counter += 1;
+        if (c.counter < c.every) continue;
+        c.counter = 0;
+        let left = c.poison;
+        for (let i = side.poisons.length - 1; i >= 0 && left > 0; i--) {
+          const p = side.poisons[i];
+          const take = Math.min(p.stacks, left);
+          p.stacks -= take;
+          left -= take;
+          side.poison -= take;
+          if (p.stacks <= 0) side.poisons.splice(i, 1);
+        }
+        const stuck = side.units.reduce((best, u) => (u.paraSteps > (best?.paraSteps ?? 0) ? u : best), null);
+        if (stuck) stuck.paraSteps = 0;
+        emit({ type: 'cure', side: key, poison: c.poison - left, unparalyzed: stuck?.unit.pos ?? null });
       }
     }
 

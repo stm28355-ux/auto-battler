@@ -34,6 +34,11 @@ const EFFECT_FIELDS = {
   heal: ['amount', 'interval'],
   pulse: ['status', 'amount', 'interval'],
   lifesteal: ['value'],
+  rally: ['stat', 'value', 'duration'],
+  cure: ['poison', 'interval'],
+  lifestealAura: ['value'],
+  venomAtk: ['value'],
+  itemAmp: ['stat', 'value'],
 };
 const MAX_EFFECTS_READ = 8; // 多すぎる配列は、検査の前に切り詰める
 const MAX_ICON_CODEPOINTS = 8;

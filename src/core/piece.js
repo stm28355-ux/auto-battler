@@ -1,4 +1,4 @@
-import { EFFECT_TYPES, PARALYZE_TARGETS, PULSE_STATUS, STAT_NAMES } from '../data/effects.js';
+import { AMP_STATS, EFFECT_TYPES, PARALYZE_TARGETS, PULSE_STATUS, RALLY_STATS, STAT_NAMES } from '../data/effects.js';
 import { TRIBES } from '../data/tribes.js';
 import { BALANCE } from '../data/balance.js';
 
@@ -7,6 +7,9 @@ export const spdAddAllowed = () => BALANCE.cost?.spdAdd != null;
 export const SPD_ADD_RANGE = [0.05, 1];
 // 吸血も、その査定（cost.lifesteal）がある環境（Ver.3〜）だけ
 export const lifestealAllowed = () => BALANCE.cost?.lifesteal != null;
+// 号令・手当て・吸血を配る・毒で攻撃+・道具を磨く（Ver.3〜）も、その査定がある環境だけ
+const NEW_EFFECT_COST = { rally: 'rallyLen', cure: 'curePoison', lifestealAura: 'lifesteal', venomAtk: 'venomStacks', itemAmp: 'itemAmpAtk' };
+export const effectAllowed = (type) => !NEW_EFFECT_COST[type] || BALANCE.cost?.[NEW_EFFECT_COST[type]] != null;
 
 // 駒作成で入力できる範囲（spec §3）。遊びとして、1つの値だけでもコスト上限（いちばん高いボード）まで上げられる広さにする。
 // 強すぎる駒はコストが上限を超えて置けなくなるので、範囲で強さを抑える必要はない。
@@ -28,6 +31,7 @@ function validateEffect(e, kind) {
   const type = has(EFFECT_TYPES, e?.type) ? EFFECT_TYPES[e.type] : null;
   if (!type) return `不明な効果です（${e?.type}）`;
   if (!type.on.includes(kind)) return `${type.name}はこの駒に付けられません`;
+  if (!effectAllowed(e.type)) return `${type.name}はこの環境では使えません`;
   switch (e.type) {
     case 'poison':
       if (!Number.isInteger(e.stacks) || e.stacks < 1 || e.stacks > EFFECT_MAX.stacks) return `毒の付与量は1〜${EFFECT_MAX.stacks}の整数にしてください`;
@@ -73,6 +77,25 @@ function validateEffect(e, kind) {
     case 'lifesteal':
       if (!lifestealAllowed()) return '吸血はこの環境では使えません';
       if (!inRange(e.value, [0.05, 1])) return '吸血は5〜100%にしてください';
+      break;
+    case 'rally':
+      if (!has(RALLY_STATS, e.stat)) return `号令の対象が不正です（${e.stat}）`;
+      if (!inRange(e.value, [0.05, EFFECT_MAX.buffPct])) return `号令の割合は5〜${EFFECT_MAX.buffPct * 100}%にしてください`;
+      if (!inRange(e.duration, [0.5, EFFECT_MAX.seconds])) return `号令の秒数は0.5〜${EFFECT_MAX.seconds}にしてください`;
+      break;
+    case 'cure':
+      if (!Number.isInteger(e.poison) || e.poison < 0 || e.poison > EFFECT_MAX.stacks) return `手当てで減らす毒は0〜${EFFECT_MAX.stacks}の整数にしてください`;
+      if (!inRange(e.interval, [0.5, 30])) return '手当ての間隔は0.5〜30秒にしてください';
+      break;
+    case 'lifestealAura':
+      if (!inRange(e.value, [0.05, 1])) return '配る吸血は5〜100%にしてください';
+      break;
+    case 'venomAtk':
+      if (!inRange(e.value, [0.1, 10])) return '毒で攻撃+は0.1〜10にしてください';
+      break;
+    case 'itemAmp':
+      if (!has(AMP_STATS, e.stat)) return `道具を磨くの対象が不正です（${e.stat}）`;
+      if (!inRange(e.value, [0.05, 2])) return '道具を磨くは5〜200%にしてください';
       break;
     case 'pulse':
       if (!has(PULSE_STATUS, e.status)) return `定期付与の状態異常が不正です（${e.status}）`;

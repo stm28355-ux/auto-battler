@@ -23,6 +23,9 @@ export const NEUTRAL_BALANCE = {
   poisonDamage: 1,
   poisonDuration: null,
   paralyzeFactor: 0.5,
+  paralyzeSlowFactor: null,
+  paralyzeSlowSpd: null,
+  paralyzeFastSpd: null,
   alternateTies: null,
   fastestNow: null,
   cost: {
@@ -51,6 +54,14 @@ export const NEUTRAL_BALANCE = {
     paralyzeWeight: null,
     lifesteal: null,
     spdAdd: null,
+    atkBuff: null,
+    tribeShare: null,
+    rallyLen: null,
+    curePoison: null,
+    cureParalyze: null,
+    venomStacks: null,
+    itemAmpAtk: null,
+    itemAmpDef: null,
   },
 };
 
@@ -75,6 +86,11 @@ export const BALANCE = {
   poisonDuration: null,
   // 麻痺中の攻撃速度の倍率。
   paralyzeFactor: 0.3,
+  // 試し（null なら使わない）：麻痺の倍率を、かかった駒の攻撃速度で変える。
+  //   攻撃速度 paralyzeFastSpd 以上は paralyzeFactor、paralyzeSlowSpd 以下は paralyzeSlowFactor、その間はまっすぐつなぐ
+  paralyzeSlowFactor: null,
+  paralyzeSlowSpd: 0.5,
+  paralyzeFastSpd: 2,
   // 麻痺などの「攻撃時の効果」を受ける相手が2体で同じ割合のとき（ペンタグラムと3行のボード）、交互に狙う（Ver.3）。
   // ない環境は、いつも上の行を狙う。
   alternateTies: true,
@@ -98,7 +114,7 @@ export const BALANCE = {
     atkPow: 0.4, // さらに (攻撃 / atkRef) ^ atkPow を掛ける（1発の重さ）
     atkRef: 40,
     def: 80, // キャラ: 防御 / def（Ver.2 は 65。防御は前線にしか効かないので安くした）
-    itemAtk: 14, // 道具: 攻撃 / itemAtk（隣の何体にも効くので、キャラの攻撃より高く数える）
+    itemAtk: 12, // 道具: 攻撃 / itemAtk（隣の何体にも効くので、キャラの攻撃より高く数える。攻撃の強化と同じく、1発の重さの分を入れて 14 → 12）
     itemDef: 35, // 道具: 防御 / itemDef（Ver.2 は 28。キャラの防御と同じ割合で安くした）
     // 特殊効果
     poison: 0.7, // 付与量 × 確率 × poison
@@ -120,12 +136,32 @@ export const BALANCE = {
     adjBuff: 3,
     teamBuff: 9, // Ver.2 は 8。全体効果（預言者など）が割安だったので上げた
     // 効く人数の想定を、能力値と駒の種類で変える（Ver.3）。[能力値 or any][効果][character / item / any]
+    //   「item.pct」のように、固定値（add）と割合（pct）で分けて書ける
     receivers: {
       // 道具の行効果は、道具がその行の1マスを使うので2体
       any: { rowBuff: { item: 2 } },
-      // 防御は前線にしか効かない。隣接はキャラ1体（隣の前線）・道具1.5体、行は1体（その行の前線）、全体は3体（3行の前線）
-      def: { adjBuff: { character: 1, item: 1.5 }, rowBuff: { any: 1 }, teamBuff: { any: 3 } },
+      // 道具の割合強化（攻撃%・攻撃速度%）は、攻撃×攻撃速度の高いエースの隣に置かれるので、3体ではなく3.75体分に数える
+      atk: { adjBuff: { 'item.pct': 3.75 } },
+      spd: { adjBuff: { 'item.pct': 3.75 } },
+      // HP は相乗がなく（チームHPに足すだけ）、値段より効かなかったので、隣接2.5体・全体8体（2体・7体では聖鎧・歯車が強すぎた）
+      hp: { adjBuff: { any: 2.5 }, teamBuff: { any: 8 } },
+      // 防御は前線にしか効かない。隣接はキャラ0.7体・道具1体、行は1体（その行の前線）、全体は3体（3行の前線）
+      def: { adjBuff: { character: 0.7, item: 1 }, rowBuff: { any: 1 }, teamBuff: { any: 3 } },
     },
+    // 攻撃の強化（固定値・割合）は、上がるほど1発が重くなり防御を抜けるので、この倍に数える（計算上は1.47倍だが、緩めた）
+    atkBuff: 1.25,
+    // 種族を決めた全体効果は、全員の何割に効くと数えるか
+    tribeShare: 0.5,
+    // 号令：全体効果と同じ値段 × 秒数 ÷ rallyLen（戦闘の長さの想定）
+    rallyLen: 10,
+    // 手当て：(curePoison × 減らす毒 + cureParalyze) ÷ 間隔。毒の付与（1回0.7）より安くした
+    curePoison: 0.3,
+    cureParalyze: 0.3,
+    // 毒で攻撃+：相手の毒の蓄積の想定
+    venomStacks: 12,
+    // 道具を磨く：隣の道具の攻撃・防御の想定（実力）× 割合
+    itemAmpAtk: 1.6,
+    itemAmpDef: 0.8,
     // 麻痺の対象の重み（Ver.3）。前線は、攻撃の高い駒が前線以外に居やすいので軽くした（Ver.2 は 1）
     paralyzeWeight: { front: 0.6, random: 1, fastest: 1.2, strongest: 1.2, row: 2.5, all: 4 },
     // 吸血：割合 × 攻撃 × 攻撃速度 × lifesteal（回復の係数 0.04 × ダメージ倍率 1.2 × 防御で残る割合の想定 0.75）

@@ -10,7 +10,8 @@ export const RELICS = [
   { id: 'r_heart', name: '生命の結晶', icon: '💎',
     effects: [{ type: 'statBuff', stat: 'hp', value: 0.1, mode: 'pct', scope: 'team' }] },
   { id: 'r_warhorn', name: '戦の角笛', icon: '📯',
-    effects: [{ type: 'statBuff', stat: 'def', value: 15, mode: 'add', scope: 'team', tribe: 'warrior' }] },
+    // Ver.3：歯車の心臓（機械のHP）と分けるため号令にした。5秒・+50% では戦士の速攻が強すぎたので、弱く長くした
+    effects: [{ type: 'rally', stat: 'atk', value: 0.2, duration: 8, tribe: 'warrior' }] },
   { id: 'r_grimoire', name: '魔導書', icon: '📕',
     effects: [{ type: 'statBuff', stat: 'atk', value: 0.3, mode: 'pct', scope: 'team', tribe: 'mage' }] },
   { id: 'r_totem', name: '獣のトーテム', icon: '🪶',
@@ -24,8 +25,8 @@ export const RELICS = [
   { id: 'r_phalanx', name: '方陣の旗', icon: '🏳️',
     effects: [{ type: 'fullRowBuff', stat: 'atk', value: 0.1, mode: 'pct' }, { type: 'fullRowBuff', stat: 'def', value: 10, mode: 'add' }] },
   { id: 'r_lone', name: '孤高の紋章', icon: '🎖️',
-    // マス(2,3)（どのボードにもある中央寄りのマス）のキャラの全能力値
-    effects: ['hp', 'atk', 'def', 'spd'].map((stat) => ({ type: 'cellBuff', pos: [2, 3], stat, value: 0.15, mode: 'pct' })) },
+    // マス(2,3)（どのボードにもある中央寄りのマス）のキャラの全能力値。15% では王冠・魔剣と重なってエースが強すぎた（Ver.3 で 8%）
+    effects: ['hp', 'atk', 'def', 'spd'].map((stat) => ({ type: 'cellBuff', pos: [2, 3], stat, value: 0.08, mode: 'pct' })) },
   // 対策用（耐久の構成が、毒を少し入れた相手に負けないための枠。毒を主軸にした構成には勝てない強さにする）
   { id: 'r_antidote', name: '解毒の聖水', icon: '💧',
     effects: [{ type: 'poisonResist', value: 0.2 }, { type: 'poisonChance', value: 0.1 }] },

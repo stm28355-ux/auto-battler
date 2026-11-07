@@ -15,6 +15,11 @@ export const EFFECT_TYPES = {
   lifesteal: { name: '吸血', on: ['character'] }, // Ver.3
   cellBuff: { name: 'マスの強化', on: ['relic'] }, // Ver.3
   poisonChance: { name: '毒の確率', on: ['relic'] }, // Ver.3
+  rally: { name: '号令', on: ['character', 'relic'] }, // Ver.3：開始から決まった秒数だけ、味方を強くする
+  cure: { name: '手当て', on: ['character', 'item'] }, // Ver.3：一定時間ごとに、味方の毒を減らし、麻痺を1体解く
+  lifestealAura: { name: '吸血を配る', on: ['character'] }, // Ver.3：隣のキャラに吸血を付ける
+  venomAtk: { name: '毒で攻撃+', on: ['character'] }, // Ver.3：相手の毒の蓄積1ごとに、自分の攻撃が上がる
+  itemAmp: { name: '道具を磨く', on: ['character'] }, // Ver.3：隣の道具の攻撃・防御を強くする
   adjAtkMult: { name: '隣接攻撃倍率', on: ['character', 'item'], legacy: true },
   statBuff: { name: 'ステータス強化', on: ['relic'] },
   fullRowBuff: { name: '3体の行の強化', on: ['relic'] },
@@ -41,6 +46,9 @@ export const PULSE_STATUS = { poison: '毒', curse: '呪い' };
 
 export const STAT_NAMES = { hp: 'HP', atk: '攻撃', def: '防御', spd: '攻撃速度' };
 export const BUFF_MODES = { add: '固定値', pct: '割合(%)' };
+// 号令で上げられる値・道具を磨くで上げられる値
+export const RALLY_STATS = { atk: '攻撃', spd: '攻撃速度' };
+export const AMP_STATS = { atk: '攻撃', def: '防御' };
 
 // 能力値を上げる効果（隣接・行・全体）。同じ形 { stat, mode, value } を持つ。
 export const BUFF_TYPES = new Set(['adjBuff', 'rowBuff', 'teamBuff']);
@@ -67,8 +75,20 @@ export function describeEffect(e) {
       return `防御貫通${pct(e.value)}`;
     case 'adjBuff':
     case 'rowBuff':
-    case 'teamBuff':
       return `${BUFF_RANGE[e.type]}の${STAT_NAMES[e.stat]}+${buffValue(e)}`;
+    case 'teamBuff':
+      // tribe があれば、その種族のキャラだけ（Ver.3）
+      return `${e.tribe ? `味方の${TRIBES[e.tribe]?.name ?? e.tribe}` : BUFF_RANGE.teamBuff}の${STAT_NAMES[e.stat]}+${buffValue(e)}`;
+    case 'rally':
+      return `開始から${e.duration}秒、${e.tribe ? `味方の${TRIBES[e.tribe]?.name ?? e.tribe}` : '味方のキャラ全員'}の${STAT_NAMES[e.stat]}+${pct(e.value)}`;
+    case 'cure':
+      return `${e.interval}秒ごとに、味方の毒-${e.poison}・麻痺を1体解く`;
+    case 'lifestealAura':
+      return `隣のキャラに吸血${pct(e.value)}を付ける`;
+    case 'venomAtk':
+      return `相手の毒の蓄積1ごとに攻撃+${e.value}`;
+    case 'itemAmp':
+      return `隣の道具の${STAT_NAMES[e.stat]}+${pct(e.value)}`;
     case 'adjAtkMult':
       return `隣接キャラの攻撃倍率+${pct(e.mult)}`;
     case 'heal':

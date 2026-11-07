@@ -112,7 +112,7 @@ test('シナジーに5体・7体の段階があり、中立は1体から効く�
     const syn = Object.fromEntries(activeSynergies(t, catalog).map((s) => [s.tribe, s.tier]));
     assert.deepEqual(syn, { beast: 5, neutral: 1 });
     const [unit] = resolveTeam(team('square', [[[1, 1], 'c_elf']]), catalog).units;
-    close(unit.atk, 28 * 1.2); // 中立1体：全能力値+20%
+    close(unit.atk, catalog.piece('c_elf').atk * 1.2); // 中立1体：全能力値+20%
   } finally {
     useBalance(NEUTRAL_BALANCE);
   }

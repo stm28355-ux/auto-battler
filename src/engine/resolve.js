@@ -34,7 +34,19 @@ export function resolveTeam(team, catalog) {
       else sideEffects.push(e);
     }
   }
-  for (const { piece } of placed) for (const e of effectsOf(piece, 'teamBuff')) buffs.push({ ...e, tribe: null });
+  for (const { piece } of placed) for (const e of effectsOf(piece, 'teamBuff')) buffs.push({ ...e, tribe: e.tribe ?? null });
+  // 号令（Ver.3）：駒と遺物の号令。開始から duration 秒だけ効く
+  const rallies = [...placed.flatMap(({ piece }) => effectsOf(piece, 'rally')), ...relics.flatMap((r) => effectsOf(r, 'rally'))];
+  // 道具を磨く（Ver.3）：道具の隣にいるキャラの効果のうち、いちばん大きいものが、その道具の攻撃・防御に掛かる
+  const ampOf = (pos, stat) => {
+    let best = 0;
+    for (const n of neighbors(team.board, pos)) {
+      const o = byPos.get(posKey(n));
+      if (o?.piece.kind !== 'character') continue;
+      for (const e of effectsOf(o.piece, 'itemAmp')) if (e.stat === stat) best = Math.max(best, e.value);
+    }
+    return 1 + best;
+  };
   const sideSum = (type) => sumOf(sideEffects.filter((e) => e.type === type));
 
   // 行効果：同じ行のキャラクターに効く（効果を持つ駒自身がキャラクターなら自分にも）。ボードの特性で効き目が変わる
@@ -59,16 +71,18 @@ export function resolveTeam(team, catalog) {
     let pierce = sumOf(effectsOf(piece, 'pierce'));
     const onHit = onHitOf(piece);
     const near = [];
+    let aura = 0; // 隣から配られた吸血
     for (const n of neighbors(team.board, pos)) {
       const other = byPos.get(posKey(n));
       if (!other) continue;
       if (other.piece.kind === 'item') {
-        atk += other.piece.atk;
-        def += other.piece.def;
+        atk += other.piece.atk * ampOf(other.pos, 'atk');
+        def += other.piece.def * ampOf(other.pos, 'def');
         onHit.push(...onHitOf(other.piece));
         pierce += sumOf(effectsOf(other.piece, 'pierce'));
       }
       for (const e of other.piece.effects ?? []) {
+        if (e.type === 'lifestealAura' && other.piece.kind === 'character') aura += e.value;
         if (e.type === 'adjAtkMult') atkMult += e.mult;
         else if (e.type === 'adjBuff') near.push(e);
       }
@@ -103,7 +117,9 @@ export function resolveTeam(team, catalog) {
       spd: buffed('spd', piece.spd),
       atkMult,
       pierce: Math.min(1, pierce),
-      lifesteal: sumOf(effectsOf(piece, 'lifesteal')),
+      lifesteal: sumOf(effectsOf(piece, 'lifesteal')) + aura,
+      venomAtk: sumOf(effectsOf(piece, 'venomAtk')),
+      rally: rallies.filter((e) => !e.tribe || e.tribe === piece.tribe).map((e) => ({ stat: e.stat, value: e.value, duration: e.duration })),
       onHit,
     });
   }
@@ -120,6 +136,9 @@ export function resolveTeam(team, catalog) {
   const regen = sideSum('regen');
   if (regen > 0) healers.push({ amount: maxHp * regen, interval: 1, source: { kind: 'synergy', id: 'regen' } });
 
+  // 手当て（Ver.3）：どこに置いても、一定時間ごとに味方の毒を減らし、麻痺を1体解く
+  const cures = placed.flatMap(({ pos, piece }) => effectsOf(piece, 'cure').map((e) => ({ ...e, source: { kind: 'piece', id: piece.id, pos } })));
+
   // 定期付与：どこに置いても、一定時間ごとに相手へ状態異常を付ける
   const pulses = placed.flatMap(({ pos, piece }) => effectsOf(piece, 'pulse').map((e) => ({ ...e, source: { kind: 'piece', id: piece.id, pos } })));
 
@@ -129,6 +148,7 @@ export function resolveTeam(team, catalog) {
     fronts,
     healers,
     pulses,
+    cures,
     poisonBonus: sideSum('poisonBonus'),
     paralyzeBonus: sideSum('paralyzeBonus'),
     poisonResist: Math.min(0.9, sideSum('poisonResist')),

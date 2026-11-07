@@ -219,6 +219,11 @@ export function initBattleScreen({ getTeams }) {
         logLine(e.side, `${e.t.toFixed(2)}s ${tag(e.side)} 💚 回復 +${e.amount}`);
         if (!silent) pulse($(`hpbar-${e.side}`), 'hpbar--heal');
         break;
+      case 'cure': {
+        const freed = e.unparalyzed ? `・${escapeHtml(views[e.side].names.get(posKey(e.unparalyzed)))}の麻痺を解く` : '';
+        if (e.poison > 0 || freed) logLine(e.side, `${e.t.toFixed(2)}s ${tag(e.side)} ✚ 手当て 毒-${e.poison}${freed}`);
+        break;
+      }
       default:
         break; // poisonTick は多いのでログに出さない
     }

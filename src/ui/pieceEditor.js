@@ -1,8 +1,8 @@
-import { BUFF_MODES, BUFF_TYPES, EFFECT_TYPES, PARALYZE_TARGETS, PULSE_STATUS, STAT_NAMES } from '../data/effects.js';
+import { AMP_STATS, BUFF_MODES, BUFF_TYPES, EFFECT_TYPES, PARALYZE_TARGETS, PULSE_STATUS, RALLY_STATS, STAT_NAMES } from '../data/effects.js';
 import { TRIBES } from '../data/tribes.js';
 import { CHARACTERS, ITEMS } from '../data/pieces.js';
 import { costBreakdown, pieceCost } from '../core/cost.js';
-import { EFFECT_MAX, MAX_EFFECTS, SPD_ADD_RANGE, STAT_RANGES, lifestealAllowed, spdAddAllowed, validatePiece } from '../core/piece.js';
+import { EFFECT_MAX, MAX_EFFECTS, SPD_ADD_RANGE, STAT_RANGES, effectAllowed, lifestealAllowed, spdAddAllowed, validatePiece } from '../core/piece.js';
 import { BOARDS } from '../data/boards.js';
 import { MAX_NAME, MAX_JSON_CHARS, exportPieceJson, exportPiecesJson, parsePieceJson, sanitizePiece } from '../storage/pieceJson.js';
 import { newPieceId } from '../storage/pieceStore.js';
@@ -124,6 +124,52 @@ const EFFECTS = {
     when: lifestealAllowed, // Ver.3〜
     make: () => ({ type: 'lifesteal', value: 0.3 }),
     fields: [{ k: 'value', label: '吸血(%)', min: 5, max: 100, step: 5, scale: 100 }],
+  },
+  // Ver.3〜の効果（その環境の査定があるときだけ選べる）
+  rally: {
+    name: '号令',
+    hint: 'どこに置いても、開始から決まった秒数だけ味方全員',
+    when: () => effectAllowed('rally'),
+    make: () => ({ type: 'rally', stat: 'spd', value: 0.2, duration: 5 }),
+    fields: [
+      { k: 'stat', label: '対象の値', options: RALLY_STATS },
+      { k: 'value', label: '上げる(%)', min: 5, max: EFFECT_MAX.buffPct * 100, step: 5, scale: 100 },
+      { k: 'duration', label: '秒数', min: 0.5, max: EFFECT_MAX.seconds, step: 0.5 },
+    ],
+  },
+  cure: {
+    name: '手当て',
+    hint: 'どこに置いても、一定時間ごとに味方の毒を減らし、麻痺のいちばん長い1体を解く',
+    when: () => effectAllowed('cure'),
+    make: () => ({ type: 'cure', poison: 2, interval: 2 }),
+    fields: [
+      { k: 'poison', label: '減らす毒', min: 0, max: EFFECT_MAX.stacks, step: 1 },
+      { k: 'interval', label: '間隔(秒)', min: 0.5, max: 30, step: 0.5 },
+    ],
+  },
+  lifestealAura: {
+    name: '吸血を配る',
+    hint: '隣のマスのキャラに吸血を付ける',
+    when: () => effectAllowed('lifestealAura'),
+    make: () => ({ type: 'lifestealAura', value: 0.2 }),
+    fields: [{ k: 'value', label: '吸血(%)', min: 5, max: 100, step: 5, scale: 100 }],
+  },
+  venomAtk: {
+    name: '毒で攻撃+',
+    hint: '自分の攻撃（相手の毒の蓄積1ごとに上がる）',
+    when: () => effectAllowed('venomAtk'),
+    make: () => ({ type: 'venomAtk', value: 1 }),
+    fields: [{ k: 'value', label: '蓄積1ごとの攻撃', min: 0.1, max: 10, step: 0.1 }],
+  },
+  itemAmp: {
+    name: '道具を磨く',
+    hint: '隣のマスの道具の攻撃・防御（その道具の隣のキャラ全員に効く）',
+    when: () => effectAllowed('itemAmp'),
+    make: () => ({ type: 'itemAmp', stat: 'atk', value: 0.3 }),
+    fields: [
+      { k: 'stat', label: '対象の値', options: AMP_STATS },
+      { k: 'value', label: '上げる(%)', min: 5, max: 200, step: 5, scale: 100 },
+    ],
   },
   adjAtkMult: {
     name: '隣接攻撃倍率（Ver.1）',

@@ -24,7 +24,8 @@ function buffGain(e, c) {
   const add = e.mode === 'add';
   return {
     hp: (add ? e.value : e.value * ref.hp) / c.hp,
-    atk: (add ? e.value : e.value * ref.atk) / c.atkSpd,
+    // 攻撃は上がるほど1発が重くなり防御を抜ける。その分を cost.atkBuff 倍に数える（Ver.3〜）
+    atk: ((add ? e.value : e.value * ref.atk) / c.atkSpd) * (c.atkBuff ?? 1),
     def: (add ? e.value : e.value * ref.def) / c.def,
     // 攻撃速度の固定値（Ver.3〜）は、基準キャラ（速度1）なら同じ割合と同じ。遅く重い駒ほど得なので cost.spdAdd 倍に数える
     spd: ((e.value * ref.atk) / c.atkSpd) * (add ? c.spdAdd ?? 1 : 1),
@@ -34,10 +35,18 @@ function buffGain(e, c) {
 // 能力値を上げる効果が、何体に効くと数えるか（Ver.3〜は cost.receivers で細かく決める）。
 //   防御は前線にしか意味がないので、効く人数を少なく数える。道具の行効果は、道具がその行の1マスを使うので少なく数える。
 function receivers(e, piece, c) {
+  // 種族を決めた全体効果（Ver.3）は、その種族の想定人数の割合（cost.tribeShare）だけ効く
+  const share = e.tribe ? c.tribeShare ?? 0.5 : 1;
+  return share * baseReceivers(e, piece, c);
+}
+function baseReceivers(e, piece, c) {
   const r = c.receivers;
   if (!r) return c[e.type];
   const kind = piece.kind === 'item' ? 'item' : 'character';
-  return r[e.stat]?.[e.type]?.[kind] ?? r[e.stat]?.[e.type]?.any ?? r.any?.[e.type]?.[kind] ?? c[e.type];
+  // 「item.pct」のように、固定値（add）と割合（pct）で分けて書くこともできる
+  const mode = `${kind}.${e.mode}`;
+  return r[e.stat]?.[e.type]?.[mode] ?? r[e.stat]?.[e.type]?.[kind] ?? r[e.stat]?.[e.type]?.any
+    ?? r.any?.[e.type]?.[mode] ?? r.any?.[e.type]?.[kind] ?? c[e.type];
 }
 
 // piece: 効果を持つ駒。「攻撃時」の効果と防御貫通は、攻撃の回数に比例して効くので、
@@ -72,6 +81,19 @@ export function effectCost(e, piece = { kind: 'character', spd: 1 }) {
     case 'lifesteal':
       // 回復量 ≒ 吸血の割合 × 攻撃 × 攻撃速度（防御で減る分は cost.lifesteal に入れてある）
       return c.lifesteal * e.value * (piece.atk ?? 40) * (piece.spd ?? 1);
+    case 'rally':
+      // 全体効果の割合と同じ値段 × 効く秒数 ÷ 戦闘の長さの想定（cost.rallyLen 秒）
+      return (receivers({ ...e, type: 'teamBuff' }, piece, c) * buffGain({ ...e, mode: 'pct' }, c) * e.duration) / c.rallyLen;
+    case 'cure':
+      return (c.curePoison * e.poison + c.cureParalyze) / e.interval;
+    case 'lifestealAura':
+      // 隣の基準キャラ（cost.adjBuff 体）の攻撃×攻撃速度に吸血が付く
+      return c.lifesteal * e.value * (c.buffRef?.atk ?? 45) * c.adjBuff;
+    case 'venomAtk':
+      // 相手の毒の蓄積の想定（cost.venomStacks）× 値 を攻撃に足したもの × 攻撃速度
+      return ((c.venomStacks * e.value * (piece.spd ?? 1)) / c.atkSpd) * (c.atkBuff ?? 1);
+    case 'itemAmp':
+      return (e.stat === 'def' ? c.itemAmpDef : c.itemAmpAtk) * e.value;
     case 'pulse':
       return ((e.status === 'curse' ? c.pulseCurse : c.pulsePoison) * e.amount) / e.interval;
     default:
