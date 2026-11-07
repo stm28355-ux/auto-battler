@@ -10,7 +10,7 @@ export const BOARDS = {
     id: 'pentagram',
     name: 'ペンタグラム',
     shape: 'triangle',
-    costCap: 55, // Ver.3：51 → 55（ペンタグラムが均衡から消えたため）
+    costCap: 53, // Ver.3：51 → 53（ペンタグラムが均衡から消えたため。55 では雷術師を何体も積む速攻が95%になった）
     cells: [
       [1, 3],
       [2, 1], [2, 2], [2, 3], [2, 4], [2, 5],
