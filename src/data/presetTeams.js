@@ -53,7 +53,7 @@ export const PRESET_TEAMS = [
     tier: 'normal',
     slots: [
       { pos: [1, 3], pieceId: 'i_censer' },
-      { pos: [2, 1], pieceId: 'c_knight' },
+      { pos: [2, 1], pieceId: 'c_paladin' },
       { pos: [3, 1], pieceId: 'c_paladin' },
       { pos: [2, 2], pieceId: 'c_apprentice' },
       { pos: [2, 3], pieceId: 'c_hexer' },

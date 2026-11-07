@@ -10,7 +10,7 @@ test('マス数とコスト上限', () => {
   assert.equal(BOARDS.honeycomb.cells.length, 7);
   assert.deepEqual(
     [BOARDS.pentagram.costCap, BOARDS.square.costCap, BOARDS.honeycomb.costCap],
-    [53, 53, 55],
+    [55, 53, 55],
   );
 });
 

@@ -10,8 +10,8 @@ export const RELICS = [
   { id: 'r_heart', name: '生命の結晶', icon: '💎',
     effects: [{ type: 'statBuff', stat: 'hp', value: 0.1, mode: 'pct', scope: 'team' }] },
   { id: 'r_warhorn', name: '戦の角笛', icon: '📯',
-    // Ver.3：歯車の心臓（機械のHP）と分けるため号令にした。5秒・+50% では戦士の速攻が強すぎたので、弱く長くした
-    effects: [{ type: 'rally', stat: 'atk', value: 0.2, duration: 8, tribe: 'warrior' }] },
+    // Ver.3：歯車の心臓（機械のHP）と分けるため号令にした。5秒・+50% では戦士の速攻が強すぎたので弱くし、8秒でもまだ速攻が強かったので6秒にした
+    effects: [{ type: 'rally', stat: 'atk', value: 0.2, duration: 6, tribe: 'warrior' }] },
   { id: 'r_grimoire', name: '魔導書', icon: '📕',
     effects: [{ type: 'statBuff', stat: 'atk', value: 0.3, mode: 'pct', scope: 'team', tribe: 'mage' }] },
   { id: 'r_totem', name: '獣のトーテム', icon: '🪶',

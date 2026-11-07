@@ -33,9 +33,9 @@ export const CHARACTERS = [
   // 重装兵（前・11）：HPと防御
   { id: 'c_guard', kind: 'character', name: '重装兵', icon: '🪖', tribe: 'warrior', hp: 1100, atk: 25, def: 110, spd: 0.6,
     effects: [buff('adjBuff', 'def', 'add', 10)] },
-  // 竜騎士（両方・13）：行の攻撃+20%
-  { id: 'c_dragoon', kind: 'character', name: '竜騎士', icon: '🐉', tribe: 'warrior', hp: 700, atk: 80, def: 50, spd: 0.8,
-    effects: [buff('rowBuff', 'atk', 'pct', 0.2)] },
+  // 竜騎士（両方・13）：行の攻撃+15（固定値）。+20% だと同じ行の竜騎士2体と魔剣で掛け算になり、攻撃が200を超えた
+  { id: 'c_dragoon', kind: 'character', name: '竜騎士', icon: '🐉', tribe: 'warrior', hp: 610, atk: 69, def: 45, spd: 0.8,
+    effects: [{ type: 'rowBuff', stat: 'atk', mode: 'add', value: 15 }] },
   // 将軍（両方・15）：号令（開始から8秒、全員の攻撃速度+20%）と、戦士の攻撃+10%
   { id: 'c_general', kind: 'character', name: '将軍', icon: '👑', tribe: 'warrior', hp: 690, atk: 46, def: 50, spd: 1.0,
     effects: [{ type: 'rally', stat: 'spd', value: 0.2, duration: 8 }, { type: 'teamBuff', stat: 'atk', mode: 'pct', value: 0.1, tribe: 'warrior' }] },
@@ -48,7 +48,7 @@ export const CHARACTERS = [
   { id: 'c_witch', kind: 'character', name: '魔女', icon: '🧹', tribe: 'mage', hp: 180, atk: 22, def: 10, spd: 1.1,
     effects: [{ type: 'poison', stacks: 1, chance: 0.6 }, { type: 'teamBuff', stat: 'spd', mode: 'pct', value: 0.1, tribe: 'mage' }] },
   // 預言者（後ろ・5）：全員の攻撃+5（駒の多いペンタグラム向け）
-  { id: 'c_oracle', kind: 'character', name: '預言者', icon: '👁️', tribe: 'mage', hp: 220, atk: 17, def: 10, spd: 1.0,
+  { id: 'c_oracle', kind: 'character', name: '預言者', icon: '👁️', tribe: 'mage', hp: 230, atk: 17, def: 10, spd: 1.0,
     effects: [{ type: 'teamBuff', stat: 'atk', mode: 'add', value: 5 }] },
   // 呪詛師（後ろ・5）：呪い
   { id: 'c_cursemaster', kind: 'character', name: '呪詛師', icon: '💀', tribe: 'mage', hp: 280, atk: 25, def: 20, spd: 1.0,
@@ -153,9 +153,9 @@ export const ITEMS = [
   // 魔剣（8）：攻撃と、隣の攻撃速度+0.15（固定値）。攻撃の道具のいちばん上（鉄の剣 < 槍 < 魔剣）
   { id: 'i_blade', kind: 'item', name: '魔剣', icon: '🗡️', atk: 32, def: 0,
     effects: [{ type: 'adjBuff', stat: 'spd', mode: 'add', value: 0.15 }] },
-  // 聖鎧（6）：防御70・隣のHP+100。高コストの道具枠（魔剣と同じく均衡の2〜3割が目安）
-  { id: 'i_armor', kind: 'item', name: '聖鎧', icon: '🥋', atk: 0, def: 70,
-    effects: [{ type: 'adjBuff', stat: 'hp', mode: 'add', value: 100 }] },
+  // 聖鎧（6）：防御75・隣のHP+80。高コストの道具枠（魔剣と同じく均衡の2〜3割が目安）
+  { id: 'i_armor', kind: 'item', name: '聖鎧', icon: '🥋', atk: 0, def: 75,
+    effects: [{ type: 'adjBuff', stat: 'hp', mode: 'add', value: 80 }] },
 
   // どこに置いても効く
   { id: 'i_sword', kind: 'item', name: '鉄の剣', icon: '⚔️', atk: 16, def: 0,
