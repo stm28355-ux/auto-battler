@@ -54,7 +54,7 @@ export const PRESET_TEAMS = [
     slots: [
       { pos: [1, 3], pieceId: 'i_censer' },
       { pos: [2, 1], pieceId: 'c_knight' },
-      { pos: [3, 1], pieceId: 'c_knight' },
+      { pos: [3, 1], pieceId: 'c_paladin' },
       { pos: [2, 2], pieceId: 'c_apprentice' },
       { pos: [2, 3], pieceId: 'c_hexer' },
       { pos: [2, 4], pieceId: 'c_cursemaster' },
@@ -105,6 +105,7 @@ export const PRESET_TEAMS = [
     board: 'pentagram',
     tier: 'hard',
     slots: [
+      { pos: [1, 3], pieceId: 'c_apprentice' },
       { pos: [4, 3], pieceId: 'i_censer' },
       { pos: [2, 1], pieceId: 'c_knight' },
       { pos: [2, 2], pieceId: 'c_apprentice' },

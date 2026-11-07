@@ -10,7 +10,7 @@ export const BOARDS = {
     id: 'pentagram',
     name: 'ペンタグラム',
     shape: 'triangle',
-    costCap: 51,
+    costCap: 53, // Ver.3：51 → 53（ペンタグラムが均衡から消えたため。古の巨獣など重い駒を混ぜた型が入る余地）
     cells: [
       [1, 3],
       [2, 1], [2, 2], [2, 3], [2, 4], [2, 5],

@@ -87,10 +87,10 @@ export const BALANCE = {
   // 麻痺中の攻撃速度の倍率。
   paralyzeFactor: 0.3,
   // 麻痺の倍率を、かかった駒の攻撃速度で変える（遅い駒ほど効きにくい。傾斜のある方が型が多く出た：v3-h 15チーム / 傾斜なし v3-i 6チーム）。
-  //   攻撃速度 paralyzeFastSpd 以上は paralyzeFactor、paralyzeSlowSpd 以下は paralyzeSlowFactor、その間はまっすぐつなぐ（速度1 ≒ 0.41倍）
+  //   攻撃速度 paralyzeFastSpd 以上は paralyzeFactor、paralyzeSlowSpd 以下は paralyzeSlowFactor、その間はまっすぐつなぐ（速度1 ≒ 0.5倍）
   paralyzeSlowFactor: 0.7,
   paralyzeSlowSpd: 0.5,
-  paralyzeFastSpd: 1.2,
+  paralyzeFastSpd: 1.5,
   // 麻痺などの「攻撃時の効果」を受ける相手が2体で同じ割合のとき（ペンタグラムと3行のボード）、交互に狙う（Ver.3）。
   // ない環境は、いつも上の行を狙う。
   alternateTies: true,

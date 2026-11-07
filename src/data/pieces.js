@@ -47,9 +47,9 @@ export const CHARACTERS = [
   // 魔女（後ろ・4）：毒と、魔導の攻撃速度+10%（魔導の種族の強化役）
   { id: 'c_witch', kind: 'character', name: '魔女', icon: '🧹', tribe: 'mage', hp: 180, atk: 22, def: 10, spd: 1.1,
     effects: [{ type: 'poison', stacks: 1, chance: 0.6 }, { type: 'teamBuff', stat: 'spd', mode: 'pct', value: 0.1, tribe: 'mage' }] },
-  // 預言者（後ろ・5）：全員の攻撃
-  { id: 'c_oracle', kind: 'character', name: '預言者', icon: '👁️', tribe: 'mage', hp: 270, atk: 21, def: 15, spd: 1.0,
-    effects: [{ type: 'teamBuff', stat: 'atk', mode: 'add', value: 4 }] },
+  // 預言者（後ろ・5）：全員の攻撃+5（駒の多いペンタグラム向け）
+  { id: 'c_oracle', kind: 'character', name: '預言者', icon: '👁️', tribe: 'mage', hp: 220, atk: 17, def: 10, spd: 1.0,
+    effects: [{ type: 'teamBuff', stat: 'atk', mode: 'add', value: 5 }] },
   // 呪詛師（後ろ・5）：呪い
   { id: 'c_cursemaster', kind: 'character', name: '呪詛師', icon: '💀', tribe: 'mage', hp: 280, atk: 25, def: 20, spd: 1.0,
     effects: [{ type: 'curse', duration: 4, chance: 0.5 }] },
@@ -107,15 +107,15 @@ export const CHARACTERS = [
   // ゴーレム（前・9）：隣の防御と、前線への麻痺
   { id: 'c_golem', kind: 'character', name: 'ゴーレム', icon: '🗿', tribe: 'machine', hp: 1000, atk: 20, def: 65, spd: 0.6,
     effects: [buff('adjBuff', 'def', 'add', 10), { type: 'paralyze', target: 'front', duration: 1.5, chance: 0.7 }] },
-  // 修理ロボ（後ろ・10）：回復と、手当て（毒を減らし麻痺を解く）
-  { id: 'c_medibot', kind: 'character', name: '修理ロボ', icon: '🔧', tribe: 'machine', hp: 470, atk: 18, def: 45, spd: 0.8,
-    effects: [{ type: 'heal', amount: 40, interval: 1 }, { type: 'cure', interval: 1.5, poison: 2 }] },
+  // 修理ロボ（後ろ・10）：回復30と、手当て（毒を減らし麻痺を解く）。耐久戦が終わらないので回復を下げ、体は攻撃に回した
+  { id: 'c_medibot', kind: 'character', name: '修理ロボ', icon: '🔧', tribe: 'machine', hp: 490, atk: 35, def: 40, spd: 0.8,
+    effects: [{ type: 'heal', amount: 30, interval: 1 }, { type: 'cure', interval: 1.5, poison: 2 }] },
   // 戦闘機（両方・12）：いちばん速い相手（麻痺で遅くなった分も入れる）を麻痺70%、隣の攻撃速度
   { id: 'c_fighter', kind: 'character', name: '戦闘機', icon: '✈️', tribe: 'machine', hp: 650, atk: 55, def: 45, spd: 1.2,
     effects: [{ type: 'paralyze', target: 'fastest', duration: 1, chance: 0.7 }, buff('adjBuff', 'spd', 'pct', 0.1)] },
-  // 修理工房（両方・15）：回復と、定期的な毒（有害なガス）。HPより防御が高い（回復がよく効く）
-  { id: 'c_workshop', kind: 'character', name: '修理工房', icon: '🏭', tribe: 'machine', hp: 550, atk: 15, def: 120, spd: 0.5,
-    effects: [{ type: 'heal', amount: 50, interval: 1 }, { type: 'pulse', status: 'poison', amount: 1, interval: 0.8 }] },
+  // 修理工房（両方・15）：回復40と、定期的な毒（有害なガス）。HPより防御が高い（回復がよく効く）。耐久戦が終わらないので回復を下げ、体は攻撃に回した
+  { id: 'c_workshop', kind: 'character', name: '修理工房', icon: '🏭', tribe: 'machine', hp: 560, atk: 41, def: 115, spd: 0.5,
+    effects: [{ type: 'heal', amount: 40, interval: 1 }, { type: 'pulse', status: 'poison', amount: 1, interval: 0.8 }] },
 
   // 中立（シナジーは少ないほど強い：1体 +20%、2体 +10%、3体以上 +5%）
   // エルフ（後ろ・3）：防御貫通40%の安い対・壁役
@@ -141,8 +141,9 @@ export const ITEMS = [
     effects: [{ type: 'adjBuff', stat: 'hp', mode: 'pct', value: 0.25 }] },
   { id: 'i_banner', kind: 'item', name: '軍旗', icon: '🚩', atk: 0, def: 0,
     effects: [{ type: 'adjBuff', stat: 'spd', mode: 'pct', value: 0.25 }] },
-  { id: 'i_stungun', kind: 'item', name: 'スタンガン', icon: '🔌', atk: 5, def: 0,
-    effects: [{ type: 'paralyze', target: 'random', duration: 1.5, chance: 0.3 }] },
+  // スタンガン（1）：攻撃時に20%で、ランダムな1体を1.5秒麻痺。2個入れが多く単体の働きが大きすぎたので、コスト1の麻痺に下げた
+  { id: 'i_stungun', kind: 'item', name: 'スタンガン', icon: '🔌', atk: 0, def: 0,
+    effects: [{ type: 'paralyze', target: 'random', duration: 1.5, chance: 0.2 }] },
   { id: 'i_vial', kind: 'item', name: '毒瓶', icon: '☠️', atk: 0, def: 0,
     effects: [{ type: 'poison', stacks: 1, chance: 0.4 }] },
   // 槍：Ver.2 の魔剣の効果
@@ -152,8 +153,9 @@ export const ITEMS = [
   // 魔剣（8）：攻撃と、隣の攻撃速度+0.15（固定値）。攻撃の道具のいちばん上（鉄の剣 < 槍 < 魔剣）
   { id: 'i_blade', kind: 'item', name: '魔剣', icon: '🗡️', atk: 32, def: 0,
     effects: [{ type: 'adjBuff', stat: 'spd', mode: 'add', value: 0.15 }] },
-  { id: 'i_armor', kind: 'item', name: '聖鎧', icon: '🥋', atk: 0, def: 60,
-    effects: [{ type: 'adjBuff', stat: 'hp', mode: 'add', value: 150 }] },
+  // 聖鎧（6）：防御70・隣のHP+100。高コストの道具枠（魔剣と同じく均衡の2〜3割が目安）
+  { id: 'i_armor', kind: 'item', name: '聖鎧', icon: '🥋', atk: 0, def: 70,
+    effects: [{ type: 'adjBuff', stat: 'hp', mode: 'add', value: 100 }] },
 
   // どこに置いても効く
   { id: 'i_sword', kind: 'item', name: '鉄の剣', icon: '⚔️', atk: 16, def: 0,
