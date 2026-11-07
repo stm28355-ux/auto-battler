@@ -151,7 +151,7 @@ export const BALANCE = {
     // 攻撃の強化（固定値・割合）は、上がるほど1発が重くなり防御を抜けるので、この倍に数える（計算上は1.47倍だが、緩めた）
     atkBuff: 1.25,
     // 種族を決めた全体効果は、全員の何割に効くと数えるか
-    tribeShare: 0.5,
+    tribeShare: 0.4, // 種族を決めた全体効果は、全員に効くものの0.4倍（0.5 では古の巨獣・将軍・動力炉が値段負け）
     // 号令：全体効果と同じ値段 × 秒数 ÷ rallyLen（戦闘の長さの想定）
     rallyLen: 10,
     // 手当て：(curePoison × 減らす毒 + cureParalyze) ÷ 間隔。毒の付与（1回0.7）より安くした
@@ -160,7 +160,7 @@ export const BALANCE = {
     // 毒で攻撃+：相手の毒の蓄積の想定
     venomStacks: 12,
     // 道具を磨く：隣の道具の攻撃・防御の想定（実力）× 割合。スクエア中央なら道具4つ×それぞれ2〜3体に効くので、道具1つぶんの値段（1.6 / 0.8）では約4倍の割安だった
-    itemAmpAtk: 6,
+    itemAmpAtk: 5,
     itemAmpDef: 2,
     // 麻痺の対象の重み（Ver.3）。前線は、攻撃の高い駒が前線以外に居やすいので軽くした（Ver.2 は 1）
     paralyzeWeight: { front: 0.6, random: 1, fastest: 1.2, strongest: 1.2, row: 2.5, all: 4 },

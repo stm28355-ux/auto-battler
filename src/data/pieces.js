@@ -22,23 +22,23 @@ export const CHARACTERS = [
   { id: 'c_knight', kind: 'character', name: '騎士', icon: '🤺', tribe: 'warrior', hp: 300, atk: 18, def: 45, spd: 0.8,
     effects: [{ type: 'adjBuff', stat: 'hp', mode: 'pct', value: 0.1 }, { type: 'itemAmp', stat: 'def', value: 0.3 }] },
   // 狂戦士（後ろ・6）：攻撃と少しの防御貫通。研磨（隣の道具の攻撃+15%）
-  { id: 'c_berserker', kind: 'character', name: '狂戦士', icon: '🪓', tribe: 'warrior', hp: 180, atk: 44, def: 10, spd: 1.0,
+  { id: 'c_berserker', kind: 'character', name: '狂戦士', icon: '🪓', tribe: 'warrior', hp: 200, atk: 46, def: 10, spd: 1.0,
     effects: [{ type: 'pierce', value: 0.15 }, { type: 'itemAmp', stat: 'atk', value: 0.15 }] },
   // 聖騎士（後ろ・7）：行の防御（その行の前線を守る）と、手当て（毒を減らし麻痺を解く）
   { id: 'c_paladin', kind: 'character', name: '聖騎士', icon: '⚜️', tribe: 'warrior', hp: 480, atk: 48, def: 15, spd: 0.9,
     effects: [{ type: 'rowBuff', stat: 'def', mode: 'add', value: 15 }, { type: 'cure', interval: 2, poison: 2 }] },
-  // 剣聖（後ろ・9）：防御貫通50%と、全員の攻撃+4（中コストの強化役。+10 では体が残らなかった）
-  { id: 'c_swordmaster', kind: 'character', name: '剣聖', icon: '🥷', tribe: 'warrior', hp: 350, atk: 41, def: 20, spd: 1.0,
-    effects: [{ type: 'pierce', value: 0.5 }, { type: 'teamBuff', stat: 'atk', mode: 'add', value: 4 }] },
+  // 剣聖（後ろ・9）：防御貫通30%と、全員の攻撃+5（中コストの強化役）。攻撃の低い駒の防御貫通は値段ほど効かないので、全体の攻撃に回した
+  { id: 'c_swordmaster', kind: 'character', name: '剣聖', icon: '🥷', tribe: 'warrior', hp: 340, atk: 40, def: 20, spd: 1.0,
+    effects: [{ type: 'pierce', value: 0.3 }, { type: 'teamBuff', stat: 'atk', mode: 'add', value: 5 }] },
   // 重装兵（前・11）：HPと防御
   { id: 'c_guard', kind: 'character', name: '重装兵', icon: '🪖', tribe: 'warrior', hp: 1100, atk: 25, def: 110, spd: 0.6,
     effects: [buff('adjBuff', 'def', 'add', 10)] },
   // 竜騎士（両方・13）：行の攻撃+15（固定値）。+20% だと同じ行の竜騎士2体と魔剣で掛け算になり、攻撃が200を超えた
   { id: 'c_dragoon', kind: 'character', name: '竜騎士', icon: '🐉', tribe: 'warrior', hp: 610, atk: 69, def: 45, spd: 0.8,
     effects: [{ type: 'rowBuff', stat: 'atk', mode: 'add', value: 15 }] },
-  // 将軍（両方・15）：号令（開始から8秒、全員の攻撃速度+20%）と、戦士の攻撃+10%
-  { id: 'c_general', kind: 'character', name: '将軍', icon: '👑', tribe: 'warrior', hp: 690, atk: 46, def: 50, spd: 1.0,
-    effects: [{ type: 'rally', stat: 'spd', value: 0.2, duration: 8 }, { type: 'teamBuff', stat: 'atk', mode: 'pct', value: 0.1, tribe: 'warrior' }] },
+  // 将軍（両方・15）：号令（開始から8秒、全員の攻撃速度+30%）と、戦士の攻撃+10%
+  { id: 'c_general', kind: 'character', name: '将軍', icon: '👑', tribe: 'warrior', hp: 570, atk: 38, def: 40, spd: 1.0,
+    effects: [{ type: 'rally', stat: 'spd', value: 0.3, duration: 8 }, { type: 'teamBuff', stat: 'atk', mode: 'pct', value: 0.1, tribe: 'warrior' }] },
 
   // 魔導
   // 見習い魔導士（後ろ・3）：毒80%。毒蛇と対になる安い毒役
@@ -76,34 +76,35 @@ export const CHARACTERS = [
   // 鷹（後ろ・3）：そのまま
   { id: 'c_hawk', kind: 'character', name: '鷹', icon: '🦅', tribe: 'beast', hp: 200, atk: 25, def: 5, spd: 1.6,
     effects: [buff('rowBuff', 'spd', 'pct', 0.1)] },
-  // 豹（後ろ・5）：そのまま
-  { id: 'c_leopard', kind: 'character', name: '豹', icon: '🐆', tribe: 'beast', hp: 200, atk: 45, def: 10, spd: 1.5, effects: [] },
+  // 豹（後ろ・5）：速い攻め手。攻撃速度 1.5 → 2.0（攻撃は下げた）。固定値の強化（砥石・魔剣・古の巨獣）がよく乗る
+  { id: 'c_leopard', kind: 'character', name: '豹', icon: '🐆', tribe: 'beast', hp: 210, atk: 36, def: 10, spd: 2.0,
+    effects: [] },
   // 猪（後ろ・7）：全員の攻撃
   { id: 'c_boar', kind: 'character', name: '猪', icon: '🐗', tribe: 'beast', hp: 390, atk: 37, def: 15, spd: 1.0,
     effects: [{ type: 'teamBuff', stat: 'atk', mode: 'add', value: 4 }] },
   // 熊（両方・8）：行のHP
   { id: 'c_bear', kind: 'character', name: '熊', icon: '🐻', tribe: 'beast', hp: 850, atk: 40, def: 30, spd: 0.7,
-    effects: [buff('rowBuff', 'hp', 'pct', 0.1)] },
+    effects: [{ type: 'rowBuff', stat: 'hp', mode: 'pct', value: 0.1 }] },
   // 獅子（両方・11）：行の攻撃と攻撃速度
   { id: 'c_lion', kind: 'character', name: '獅子', icon: '🦁', tribe: 'beast', hp: 700, atk: 60, def: 25, spd: 1.0,
     effects: [buff('rowBuff', 'atk', 'pct', 0.1), buff('rowBuff', 'spd', 'pct', 0.1)] },
-  // 古の巨獣（両方・14）：獣の攻撃+15%・攻撃速度+10%（獣の種族の強化役）
-  { id: 'c_behemoth', kind: 'character', name: '古の巨獣', icon: '🦣', tribe: 'beast', hp: 930, atk: 56, def: 35, spd: 0.8,
-    effects: [{ type: 'teamBuff', stat: 'atk', mode: 'pct', value: 0.15, tribe: 'beast' }, { type: 'teamBuff', stat: 'spd', mode: 'pct', value: 0.1, tribe: 'beast' }] },
+  // 古の巨獣（両方・14）：獣の攻撃+8（固定値）・攻撃速度+10%（獣の種族の強化役）。獣は攻撃の低い速い駒が多く、+15% ではほとんど伸びなかった
+  { id: 'c_behemoth', kind: 'character', name: '古の巨獣', icon: '🦣', tribe: 'beast', hp: 950, atk: 58, def: 40, spd: 0.8,
+    effects: [{ type: 'teamBuff', stat: 'atk', mode: 'add', value: 8, tribe: 'beast' }, { type: 'teamBuff', stat: 'spd', mode: 'pct', value: 0.1, tribe: 'beast' }] },
 
   // 機械（回復と麻痺）
   // 偵察機（後ろ・3）：そのまま
   { id: 'c_drone', kind: 'character', name: '偵察機', icon: '🛸', tribe: 'machine', hp: 180, atk: 20, def: 20, spd: 1.4,
     effects: [{ type: 'paralyze', target: 'random', duration: 2, chance: 0.3 }] },
   // 動力炉（両方・5）：機械の攻撃速度+10%（機械の種族の強化役）
-  { id: 'c_reactor', kind: 'character', name: '動力炉', icon: '🔋', tribe: 'machine', hp: 550, atk: 14, def: 30, spd: 0.7,
+  { id: 'c_reactor', kind: 'character', name: '動力炉', icon: '🔋', tribe: 'machine', hp: 580, atk: 15, def: 30, spd: 0.7,
     effects: [{ type: 'teamBuff', stat: 'spd', mode: 'pct', value: 0.1, tribe: 'machine' }] },
   // 電磁塔（両方・6）：行まとめて麻痺。確率を下げて攻撃速度を上げた
   { id: 'c_tesla', kind: 'character', name: '電磁塔', icon: '📡', tribe: 'machine', hp: 450, atk: 25, def: 35, spd: 1.0,
     effects: [{ type: 'paralyze', target: 'row', duration: 2, chance: 0.3 }] },
-  // 砲台（後ろ・7）：防御貫通と、隣の攻撃（機械で攻撃を上げられる駒）
-  { id: 'c_turret', kind: 'character', name: '砲台', icon: '🗼', tribe: 'machine', hp: 230, atk: 74, def: 30, spd: 0.5,
-    effects: [{ type: 'pierce', value: 0.5 }, { type: 'adjBuff', stat: 'atk', mode: 'add', value: 8 }] },
+  // 砲台（後ろ・7）：防御貫通80%と、隣の攻撃+5（重い一撃で防御を抜く）
+  { id: 'c_turret', kind: 'character', name: '砲台', icon: '🗼', tribe: 'machine', hp: 240, atk: 76, def: 30, spd: 0.5,
+    effects: [{ type: 'pierce', value: 0.8 }, { type: 'adjBuff', stat: 'atk', mode: 'add', value: 5 }] },
   // ゴーレム（前・9）：隣の防御と、前線への麻痺
   { id: 'c_golem', kind: 'character', name: 'ゴーレム', icon: '🗿', tribe: 'machine', hp: 1000, atk: 20, def: 65, spd: 0.6,
     effects: [buff('adjBuff', 'def', 'add', 10), { type: 'paralyze', target: 'front', duration: 1.5, chance: 0.7 }] },
@@ -121,9 +122,9 @@ export const CHARACTERS = [
   // エルフ（後ろ・3）：防御貫通40%の安い対・壁役
   { id: 'c_elf', kind: 'character', name: 'エルフ', icon: '🧝', tribe: 'neutral', hp: 160, atk: 20, def: 5, spd: 1.3,
     effects: [{ type: 'pierce', value: 0.4 }] },
-  // ドワーフ（両方・7）：鍛冶（隣の道具の攻撃+15%・防御+25%。スクエア中央で道具4つを磨けるので控えめ）
-  { id: 'c_dwarf', kind: 'character', name: 'ドワーフ', icon: '⛏️', tribe: 'neutral', hp: 350, atk: 25, def: 35, spd: 0.9,
-    effects: [{ type: 'itemAmp', stat: 'atk', value: 0.15 }, { type: 'itemAmp', stat: 'def', value: 0.25 }] },
+  // ドワーフ（両方・7）：鍛冶（隣の道具の攻撃+20%・防御+30%。スクエア中央で道具4つを磨けるので控えめ）
+  { id: 'c_dwarf', kind: 'character', name: 'ドワーフ', icon: '⛏️', tribe: 'neutral', hp: 310, atk: 22, def: 30, spd: 0.9,
+    effects: [{ type: 'itemAmp', stat: 'atk', value: 0.2 }, { type: 'itemAmp', stat: 'def', value: 0.3 }] },
   // 吸血鬼（後ろ・10）：与えたダメージの50%を回復し、隣のキャラにも吸血25%を配る
   { id: 'c_vampire', kind: 'character', name: '吸血鬼', icon: '🧛', tribe: 'neutral', hp: 380, atk: 38, def: 20, spd: 1.1,
     effects: [{ type: 'lifesteal', value: 0.5 }, { type: 'lifestealAura', value: 0.25 }] },
@@ -144,8 +145,9 @@ export const ITEMS = [
   // スタンガン（1）：攻撃時に20%で、ランダムな1体を1.5秒麻痺。2個入れが多く単体の働きが大きすぎたので、コスト1の麻痺に下げた
   { id: 'i_stungun', kind: 'item', name: 'スタンガン', icon: '🔌', atk: 0, def: 0,
     effects: [{ type: 'paralyze', target: 'random', duration: 1.5, chance: 0.2 }] },
+  // 毒瓶（2）：攻撃時に50%で毒（40% では弱かった）
   { id: 'i_vial', kind: 'item', name: '毒瓶', icon: '☠️', atk: 0, def: 0,
-    effects: [{ type: 'poison', stacks: 1, chance: 0.4 }] },
+    effects: [{ type: 'poison', stacks: 1, chance: 0.5 }] },
   // 槍：Ver.2 の魔剣の効果
   { id: 'i_spear', kind: 'item', name: '槍', icon: '🔱', atk: 15, def: 0, effects: [{ type: 'pierce', value: 0.3 }] },
   { id: 'i_crown', kind: 'item', name: '王冠', icon: '💎', atk: 0, def: 0,
