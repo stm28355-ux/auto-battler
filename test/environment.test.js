@@ -105,6 +105,22 @@ test('チームのJSONは作った環境を持ち、読み込むと分かる', (
   assert.equal(parseTeamJson(unknown).env, null);
 });
 
+test('初めて開いた環境にだけ、前の環境の自作駒をコピーする（Ver.3 から先）', async () => {
+  const { copyPiecesOnce, pieceKey } = await import('../src/storage/pieceStore.js');
+  const storage = memoryStorage();
+  storage.setItem(pieceKey('v3'), JSON.stringify([{ id: 'u_a' }, { id: 'u_b' }]));
+  assert.equal(copyPiecesOnce(storage, 'v3', 'v4'), 2);
+  assert.equal(JSON.parse(storage.getItem(pieceKey('v4'))).length, 2);
+  // 2回目以降・同じ保存先・Ver.2 以前からはコピーしない
+  storage.setItem(pieceKey('v4'), '[]');
+  assert.equal(copyPiecesOnce(storage, 'v3', 'v4'), 0);
+  assert.equal(storage.getItem(pieceKey('v4')), '[]');
+  assert.equal(copyPiecesOnce(storage, 'v1', 'v2'), 0);
+  storage.setItem(pieceKey('v2'), JSON.stringify([{ id: 'u_c' }]));
+  assert.equal(copyPiecesOnce(storage, 'v2', 'v3'), 0);
+  assert.equal(copyPiecesOnce(memoryStorage(), 'v3', 'v4'), 0);
+});
+
 test('初めて開いた環境にだけ、前の環境の保存チームをコピーする', async () => {
   const { copyTeamsOnce } = await import('../src/storage/teamStore.js');
   const storage = memoryStorage();

@@ -489,14 +489,15 @@ Ver.1 で見つかった課題と、Ver.2 での対応：
 |---|---|---|
 | Ver.1（保存版） | `src/data/environments/v1.js` に固定したコピー。手で直さない | `auto-battler.teams.v1`（環境を分ける前からの保存先） |
 | Ver.2（保存版） | `src/data/environments/v2.js` に固定したコピー。手で直さない | `auto-battler.teams.v1@v2` |
-| Ver.3（調整中・最新） | いつものデータファイル（`pieces.js`・`tribes.js`・`relics.js`・`presetTeams.js`・`balance.js`・`boards.js` のコスト上限）。中身は `docs/ver3-memo.md` | `auto-battler.teams.v1@v3` |
+| Ver.3（保存版） | `src/data/environments/v3.js` に固定したコピー。手で直さない。中身は `docs/ver3-memo.md`、仕上がりの状況は `docs/ver3-status.md` | `auto-battler.teams.v1@v3` |
+| Ver.4（調整中・最新） | いつものデータファイル（`pieces.js`・`tribes.js`・`relics.js`・`presetTeams.js`・`balance.js`・`boards.js` のコスト上限）。Ver.3 を固定した時点では、中身は Ver.3 と同じ | `auto-battler.teams.v1@v4` |
 
 - 画面上部の「環境」で切り替える。切り替えるとページを読み込み直す。選んだ環境はブラウザに覚える（`auto-battler.env`）。初めての人は最新の環境。
 - 対戦は同じ環境のチーム同士だけ。ボードの形・計算行などの仕組みは全環境で共通。ダメージ式・コスト式・ボードの特性は、その環境のバランス値で決まる（Ver.1 の値には新しい項目がないので、Ver.1 の式のまま動く）。
 - 初めて開いた環境には、1つ前の環境の保存チームをコピーする（Ver.2 を初めて開くと Ver.1 のチームが入っている）。保存先がまだ一度も作られていないときだけで、前の環境のチームはそのまま残る。コピーしたときはホームに一度だけお知らせを出す。
-- 保存チーム（9スロット）は環境ごとに別。自作駒は Ver.1・Ver.2 で共通（`auto-battler.pieces.v1`。コストはその環境の式で計算し直す）、Ver.3 からは環境ごとに別（`auto-battler.pieces.v1@v3`）。
+- 保存チーム（9スロット）は環境ごとに別。自作駒は Ver.1・Ver.2 で共通（`auto-battler.pieces.v1`。コストはその環境の式で計算し直す）、Ver.3 からは環境ごとに別（`auto-battler.pieces.v1@v3`）。Ver.3 から先の環境を初めて開いたときは、1つ前の環境の自作駒もコピーする（保存チームに入っている自作駒が消えないように。Ver.2 以前の自作駒は持ち込まない）。
 - 新しい仕組み（Ver.3 の麻痺の交互狙いなど）は、バランス値の項目があるときだけ動く。固定した環境の結果が変わらないことは `test/frozen.test.js` で確かめている。
-- ストーリー・ローグライトは、相手のチームをその環境のコストで組んであるので、決まった環境（`MODE_ENV`。いまは Ver.2）で遊ぶ。Ver.3 の調整が終わったら、相手のチームを組み直して切り替える。
+- ストーリー・ローグライトは、相手のチームをその環境のコストで組んであるので、決まった環境（`MODE_ENV`）で遊ぶ。ずっと Ver.2 のまま（Ver.3 以降には切り替えない）。
 - チームのJSONには作った環境（`env`）が入る。別の環境のJSONも読み込めて、そのときは「Ver.1で作られたチームです」と案内する。環境を他へ移したいときはJSONで書き出して読み込む。
 - 仕組み：`src/data/environment.js` の `applyEnvironment(id)` が、各データファイルが export しているオブジェクト・配列の中身を入れ替える。
 - バランス調整ツールは `node tools/balance.js --env v1` で過去の環境を測れる。
@@ -511,7 +512,7 @@ Ver.1 で見つかった課題と、Ver.2 での対応：
 
 - 見た目の差し替え。駒作成でドット絵を描けるエディタ（16×16程度）を追加し、`sprite` に保存する。
 - スマホは「動けばよい」扱い。PCを優先する。
-- Ver.3 の調整（調整中）。方針と中身は `docs/ver3-memo.md`。
+- Ver.3 は完成（2026-11-07、保存版）。方針と中身は `docs/ver3-memo.md`、仕上がりの状況は `docs/ver3-status.md`。
 
 ## 14. ストーリーモード
 

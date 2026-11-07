@@ -8,12 +8,13 @@ import { randomTeam } from '../src/core/randomTeam.js';
 import { runBattle } from '../src/engine/battle.js';
 import { createRng } from '../src/engine/rng.js';
 
-// 固定した過去の環境（Ver.1・Ver.2）は、新しい環境の仕組みを足しても結果が変わらないこと。
+// 固定した過去の環境（Ver.1〜Ver.3）は、新しい環境の仕組みを足しても結果が変わらないこと。
 // ランダムなチームどうしの対戦の結果と、駒のコストをまとめた指紋で確かめる。
 // 指紋が変わったら、新しい仕組みがバランス値の項目で切り替わっているか（過去の環境では使われないか）を見直す。
 const FROZEN = {
   v1: '076658e2950aeec5',
   v2: 'bfe720038c254716',
+  v3: '267b0282367c810f',
 };
 
 function fingerprint(envId) {

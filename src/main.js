@@ -2,7 +2,7 @@ import { ENVIRONMENTS, MODE_ENV, applyEnvironment } from './data/environment.js'
 import { STORY_KEY, STORY_SLOTS, STORY_TEAMS_KEY } from './story/progress.js';
 import { ROGUE_META_KEY } from './rogue/config.js';
 import { defaultStorage } from './storage/local.js';
-import { createPieceStore, pieceKey } from './storage/pieceStore.js';
+import { copyPiecesOnce, createPieceStore, pieceKey } from './storage/pieceStore.js';
 import { copyTeamsOnce, createTeamStore, listBattleTeams, teamKey } from './storage/teamStore.js';
 import { initBattleScreen } from './ui/battleScreen.js';
 import { initDataView } from './ui/dataView.js';
@@ -24,8 +24,10 @@ const previous = ENVIRONMENTS[ENVIRONMENTS.indexOf(env) - 1];
 const copied = copyTeamsOnce(teamStorage, previous?.id, env.id);
 
 const store = createTeamStore(teamStorage);
-// 自作駒も環境ごと（Ver.1・Ver.2 は共通、Ver.3 からは別。src/storage/pieceStore.js）
-const pieceStore = createPieceStore(defaultStorage(pieceKey(env.id)), pieceKey(env.id));
+// 自作駒も環境ごと（Ver.1・Ver.2 は共通、Ver.3 からは別。src/storage/pieceStore.js）。初めて開いた環境には、前の環境の自作駒もコピーする
+const pieceStorage = defaultStorage(pieceKey(env.id));
+const copiedPieces = copyPiecesOnce(pieceStorage, previous?.id, env.id);
+const pieceStore = createPieceStore(pieceStorage, pieceKey(env.id));
 const battleTeams = () => listBattleTeams(store);
 
 const battle = initBattleScreen({ getTeams: battleTeams });
@@ -63,7 +65,9 @@ initRules({ go: (view) => go(view) });
 const home = initHome({
   getTeams: battleTeams,
   env,
-  notice: copied ? `${previous.name}の保存チーム${copied}個を、${env.name}にコピーしました（${previous.name}のチームはそのまま残っています）` : '',
+  notice: copied || copiedPieces
+    ? `${previous.name}の${[copied ? `保存チーム${copied}個` : '', copiedPieces ? `自作駒${copiedPieces}個` : ''].filter(Boolean).join('と')}を、${env.name}にコピーしました（${previous.name}の分はそのまま残っています）`
+    : '',
   getStats: () => ({
     teams: store.load().filter(Boolean).length,
     pieces: pieceStore.load().length,

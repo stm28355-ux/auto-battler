@@ -7,6 +7,24 @@ const LEGACY_KEY = 'auto-battler.pieces.v1';
 // 自作駒の保存先。Ver.1・Ver.2 は共通（環境を分ける前からの保存先）。Ver.3 からは環境ごとに別にする。
 export const pieceKey = (envId) => (envId === 'v1' || envId === 'v2' || !envId ? LEGACY_KEY : `${LEGACY_KEY}@${envId}`);
 
+// 初めて開いた環境に、1つ前の環境の自作駒をコピーする（保存チームのコピーと同じ。チームに入っている自作駒が消えないように）。
+//   Ver.2 以前の自作駒（共通の保存先）は、コスト式が違うので持ち込まない。保存先がまだ一度も作られていないときだけ。
+export function copyPiecesOnce(storage, fromEnvId, toEnvId) {
+  const from = pieceKey(fromEnvId);
+  const to = pieceKey(toEnvId);
+  if (!fromEnvId || from === to || from === LEGACY_KEY || storage.getItem(to) !== null) return 0;
+  const raw = storage.getItem(from);
+  if (raw === null) return 0;
+  let count = 0;
+  try {
+    count = JSON.parse(raw).length ?? 0;
+    storage.setItem(to, raw);
+  } catch {
+    return 0;
+  }
+  return count;
+}
+
 // 新しい自作駒のID。標準の駒（c_・i_）とは重ならない。
 export function newPieceId() {
   const random = globalThis.crypto?.randomUUID?.().replaceAll('-', '').slice(0, 12)
