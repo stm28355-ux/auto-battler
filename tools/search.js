@@ -4,6 +4,7 @@
 //   node tools/search.js --start <フォルダ>        そのフォルダの *.team.json も出発点・相手に入れる
 //   node tools/search.js --check <フォルダ>        最後に、そのフォルダのチームを見つけた環境と比べる（探索には使わない）
 //   node tools/search.js --boards honeycomb       ボードを絞る（ほかのボードの最強に押されて見えない型を探す）
+//   node tools/search.js --set paralyzeFactor=0.5  src/data/balance.js の値を一時的に変えて探す（何回でも指定できる）
 //
 // しくみ（チームの数が多すぎて全部は試せないため）
 //   1. 形の区切りごと（ボード・キャラの数・道具の数・主な種族）に、いちばん強いチームを1つずつ残す。
@@ -17,6 +18,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { applyEnvironment, findEnvironment } from '../src/data/environment.js';
+import { setBalance } from '../src/data/balance.js';
 import { BOARDS } from '../src/data/boards.js';
 import { createCatalog } from '../src/core/catalog.js';
 import { teamCost, validateTeam } from '../src/core/team.js';
@@ -37,6 +39,12 @@ const opt = (name, fallback) => {
 const envId = opt('env', undefined);
 if (envId && !findEnvironment(envId)) throw new Error(`知らない環境です: ${envId}`);
 const env = applyEnvironment(envId);
+// --set path=value（環境を切り替えたあとに当てる。ワーカーにも同じ値を渡す）
+const sets = args.flatMap((a, i) => (a === '--set' ? [args[i + 1]] : [])).map((t) => {
+  const [p, raw] = t.split('=');
+  return [p, raw === 'null' ? null : Number(raw)];
+});
+for (const [p, v] of sets) setBalance(p, v);
 const O = {
   minutes: Number(opt('minutes', 20)), // 1回の探索（1・2）の時間の上限
   polishMinutes: Number(opt('polish-minutes', 15)), // 仕上げ（3）の時間
@@ -63,7 +71,7 @@ const O = {
 const catalog = createCatalog();
 for (const b of O.boards) if (!BOARDS[b]) throw new Error(`知らないボードです: ${b}`);
 const space = createSpace(catalog, { boards: O.boards });
-const pool = createPool(env.id, O.workers);
+const pool = createPool(env.id, O.workers, sets);
 const t0 = Date.now();
 const elapsed = () => `${((Date.now() - t0) / 60000).toFixed(1)}分`;
 const describe = (t) => `${BOARDS[t.board].name} コスト${teamCost(t, catalog)}/${BOARDS[t.board].costCap} | ${t.slots

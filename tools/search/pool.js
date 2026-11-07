@@ -1,8 +1,9 @@
 // ワーカーの束。pay(a, b) の計算を小分けにして全コアで回す。
 import { Worker } from 'node:worker_threads';
 
-export function createPool(env, size) {
-  const workers = Array.from({ length: size }, () => new Worker(new URL('./worker.js', import.meta.url), { workerData: { env } }));
+// sets: [[path, value], ...]（--set の値。ワーカーでも当てる）
+export function createPool(env, size, sets = []) {
+  const workers = Array.from({ length: size }, () => new Worker(new URL('./worker.js', import.meta.url), { workerData: { env, sets } }));
   const idle = [...workers];
   const queue = [];
   const waiting = new Map();
