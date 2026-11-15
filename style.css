@@ -92,6 +92,7 @@ select {
 .cell--hover polygon { stroke: #fff; }
 .cell text { text-anchor: middle; dominant-baseline: central; pointer-events: none; }
 .cell-coord { font-size: 13px; fill: var(--muted); }
+g.cell-icon { pointer-events: none; }
 
 .hover-info { margin-top: 12px; min-height: 4.5em; }
 .muted { color: var(--muted); }

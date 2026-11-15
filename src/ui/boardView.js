@@ -1,9 +1,12 @@
 import { neighbors, posKey } from '../data/boards.js';
 import { frontLiners } from '../core/team.js';
 import { boardLayout } from './geometry.js';
+import { pieceIconMarkup } from './pieceIcons.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const ICON_SIZE = { square: 40, hex: 40, triangle: 28 };
+// 描いたアイコン（-20〜20 の箱）の拡大率
+const ICON_SCALE = { square: 1.55, hex: 1.5, triangle: 0.95 };
 
 function svgEl(tag, attrs = {}) {
   const el = document.createElementNS(SVG_NS, tag);
@@ -29,10 +32,18 @@ export function renderBoard(board, { team = null, catalog = null, mirror = false
 
     const g = svgEl('g', { class: classes.join(' '), 'data-pos': key });
     g.append(svgEl('polygon', { points: cell.points.map((p) => p.join(',')).join(' ') }));
-    const label = svgEl('text', { x: cell.center[0], y: cell.center[1], class: piece ? 'cell-icon' : 'cell-coord' });
-    if (piece) label.setAttribute('font-size', ICON_SIZE[board.shape]);
-    label.textContent = piece ? piece.icon : `${cell.pos[0]},${cell.pos[1]}`;
-    g.append(label);
+    const drawn = piece ? pieceIconMarkup(piece) : null;
+    if (drawn) {
+      // 用意したアイコン（かわいい絵）。自作駒などは下の絵文字で描く
+      const icon = svgEl('g', { class: 'cell-icon', transform: `translate(${cell.center[0]} ${cell.center[1]}) scale(${ICON_SCALE[board.shape]})` });
+      icon.innerHTML = drawn;
+      g.append(icon);
+    } else {
+      const label = svgEl('text', { x: cell.center[0], y: cell.center[1], class: piece ? 'cell-icon' : 'cell-coord' });
+      if (piece) label.setAttribute('font-size', ICON_SIZE[board.shape]);
+      label.textContent = piece ? piece.icon : `${cell.pos[0]},${cell.pos[1]}`;
+      g.append(label);
+    }
 
     g.addEventListener('mouseenter', () => {
       g.classList.add('cell--hover');
