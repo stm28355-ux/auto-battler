@@ -1,5 +1,6 @@
 // マスに置いた駒のアイコン（16×16 のドット絵）。-20〜20 の箱に描く。
-// 方針：元の絵文字のモチーフを残す・かっこよく・顔は無理につけない。
+// 方針：キャラは「その駒そのもの」（人・獣・機械）を描き、元の絵文字のモチーフを持たせる。道具は物だけを描く。
+// かっこよく・顔は無理につけない。
 // 用意のない駒（自作駒など）は null を返し、呼ぶ側が絵文字で描く。
 const PALETTE = {
   k: '#1a1c2c', // ふちどり
@@ -8,28 +9,10 @@ const PALETTE = {
   b: '#3b5dc9', c: '#41a6f6', p: '#8a4fd1', // 青・水色・紫
   G: '#38b764', d: '#257179', l: '#a7f070', // 緑・暗い緑・黄緑
   n: '#8a5a3c', t: '#c28569', // 茶・明るい茶
+  f: '#f0c8a0', P: '#5d275d', // 肌・暗い紫
 };
 
 const SPRITES = {
-  // 見習い剣士：短剣
-  c_squire: [
-    '..............kk',
-    '.............kwk',
-    '............kwgk',
-    '...........kwgk.',
-    '..........kwgk..',
-    '.........kwgk...',
-    '........kwgk....',
-    '.kk....kwgk.....',
-    '.kyk..kwgk......',
-    '..kykkwgk.......',
-    '...kyygk........',
-    '...kkyyk........',
-    '..knkkyyk.......',
-    '.knnk.kkyk......',
-    'knnk....kk......',
-    '.kk.............',
-  ],
   // 毒蛇：かま首を上げた蛇
   c_viper: [
     '................',
@@ -49,63 +32,6 @@ const SPRITES = {
     '.kkGGlGGGGGkkkk.',
     '...kkkkkkkk.....',
   ],
-  // 呪詛師：どくろ
-  c_cursemaster: [
-    '................',
-    '....kkkkkkkk....',
-    '...kwwwwwwwwk...',
-    '..kwwwwwwwwwwk..',
-    '.kwwwwwwwwwwwgk.',
-    '.kwwwwwwwwwwwgk.',
-    '.kwkkkwwwkkkwgk.',
-    '.kwkpkwwwkpkwgk.',
-    '.kwkkkwwwkkkwgk.',
-    '.kwwwwwkwwwwggk.',
-    '..kwwwkkkwwwgk..',
-    '...kkwwwwwgkk...',
-    '....kwkwkwgk....',
-    '....kwkwkwgk....',
-    '....kkkkkkkk....',
-    '................',
-  ],
-  // 雷術師：いなずま
-  c_sorcerer: [
-    '................',
-    '........kkkkkk..',
-    '.......kwyyyk...',
-    '......kwyyyk....',
-    '.....kwyyyk.....',
-    '....kwyyyk......',
-    '...kwyyykkkkk...',
-    '..kwyyyyyyyk....',
-    '..kkkkkyyyk.....',
-    '......kyyok.....',
-    '.....kyyok......',
-    '....kyyok.......',
-    '....kyok........',
-    '...kyok.........',
-    '...kok..........',
-    '...kk...........',
-  ],
-  // ゴーレム：石の像
-  c_golem: [
-    '................',
-    '....kkkkkkk.....',
-    '...kgggggggk....',
-    '...kgggggggsk...',
-    '...kkkkkkkksk...',
-    '...kskkgkkssk...',
-    '...kgggggggsk...',
-    '...kgggkgggsk...',
-    '...kggkkgggsk...',
-    '..kgggkkkggsk...',
-    '..kggggggggsk...',
-    '...kgkkkkkgsk...',
-    '...kgggggggsk...',
-    '....kggggggsk...',
-    '....kggggssk....',
-    '....kkkkkkkk....',
-  ],
   // 木の盾
   i_shield: [
     '................',
@@ -124,6 +50,101 @@ const SPRITES = {
     '....kgttynsk....',
     '.....kgssk......',
     '......kkk.......',
+  ],
+  // 見習い剣士：短剣を構えた若い剣士
+  c_squire: [
+    '............kk..',
+    '....kkkkk..kwk..',
+    '...knnnnnk.kwk..',
+    '..knnnnnnnkkwk..',
+    '..knfffffnkkwk..',
+    '..kfkffkffkkwk..',
+    '..kfffffffkkwk..',
+    '...kfffffkkyyyk.',
+    '..kkbbbbbkkknk..',
+    '.kbbbbbbbbbfk...',
+    '.kfkbbbbbkkk....',
+    '.kkkbyyybk......',
+    '...kbbbbbk......',
+    '...ksskssk......',
+    '...ksskssk......',
+    '...kkkkkkk......',
+  ],
+  // 呪詛師：どくろの面をつけた、フードの術師
+  c_cursemaster: [
+    '................',
+    '.....kkkkkk.....',
+    '....kppppppk....',
+    '...kpppppppPk...',
+    '...kpkkkkkkPk...',
+    '..kpkwwwwwwkPk..',
+    '..kpkwkwwkwkPk..',
+    '..kpkwwwwwwkPk..',
+    '..kppkwkwkkpPk..',
+    '..kpppkkkkppPk..',
+    '.kppppppppppPk..',
+    '.kpppypppppPPk..',
+    '.kppyyypppppPPk.',
+    '.kpppypppppPPPk.',
+    '.kppppppppPPPPPk',
+    '.kkkkkkkkkkkkkkk',
+  ],
+  // 雷術師：いなずまを掲げた、とんがり帽子の術師
+  c_sorcerer: [
+    '.....kk.....kk..',
+    '....kbbk...kyk..',
+    '....kbbk..kyk...',
+    '...kbbbbk.kyykk.',
+    '..kkbbbbkk.kkyk.',
+    '.kbbbbbbbbk.kyk.',
+    '..kkffffkk.kyk..',
+    '...kfkfkfk.kk...',
+    '...kffffk.kfk...',
+    '..kkbbbbkkbk....',
+    '.kbbbybbbbk.....',
+    '.kfkbybbk.......',
+    '.kkkbbbbk.......',
+    '..kbbbbbbk......',
+    '..kbbbbbbk......',
+    '..kkkkkkkk......',
+  ],
+  // ゴーレム：石の体の巨人（目が光る）
+  c_golem: [
+    '................',
+    '.....kkkkkk.....',
+    '....kggggggk....',
+    '....kgckkcgsk...',
+    '....kggggggsk...',
+    '.kkkkkkkkkkkkkk.',
+    'kgggkggggggkgggk',
+    'kggskgglgggkggsk',
+    'kggskggggggkggsk',
+    'kgsk.kggggsk.kgk',
+    'kgsk.kggggsk.kgk',
+    'kkk..kggggsk.kkk',
+    '....kggsk.kggsk.',
+    '....kggsk.kggsk.',
+    '...kgggsk.kgggsk',
+    '...kkkkkk.kkkkkk',
+  ],
+  // 魔剣：紫に光る剣（道具は物だけ）
+  i_blade: [
+    '..............kk',
+    '.............kpk',
+    '............kpPk',
+    '...........kpPk.',
+    '..........kpPk..',
+    '.........kpPk...',
+    '........kpPk....',
+    '.kk....kpPk.....',
+    '.kyk..kpPk......',
+    '..kykkpPk.......',
+    '...kyyPk........',
+    '...kkyyk........',
+    '..krkkyyk.......',
+    '.krrk.kkyk......',
+    'krrk....kk......',
+    '.kk.............',
   ],
 };
 
