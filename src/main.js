@@ -126,4 +126,18 @@ envSelect.addEventListener('change', () => {
   location.reload();
 });
 
+// 盤面の駒の絵：ドット絵か絵文字か。盤面には両方描いてあり、body の data-icons で見せる方を選ぶ（読み込み直しはいらない）
+const ICONS_KEY = 'auto-battler.icons';
+const iconToggle = document.getElementById('icon-toggle');
+function setIconStyle(style) {
+  document.body.dataset.icons = style;
+  iconToggle.textContent = style === 'emoji' ? '🖼️ 絵文字' : '🖼️ ドット絵';
+}
+setIconStyle(envStorage.getItem(ICONS_KEY) === 'emoji' ? 'emoji' : 'dot');
+iconToggle.addEventListener('click', () => {
+  const next = document.body.dataset.icons === 'emoji' ? 'dot' : 'emoji';
+  envStorage.setItem(ICONS_KEY, next);
+  setIconStyle(next);
+});
+
 showView(location.hash.slice(1));

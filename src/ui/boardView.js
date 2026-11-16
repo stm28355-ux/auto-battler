@@ -34,10 +34,12 @@ export function renderBoard(board, { team = null, catalog = null, mirror = false
     g.append(svgEl('polygon', { points: cell.points.map((p) => p.join(',')).join(' ') }));
     const drawn = piece ? pieceIconMarkup(piece) : null;
     if (drawn) {
-      // 用意したアイコン（かわいい絵）。自作駒などは下の絵文字で描く
-      const icon = svgEl('g', { class: 'cell-icon', transform: `translate(${cell.center[0]} ${cell.center[1]}) scale(${ICON_SCALE[board.shape]})` });
+      // ドット絵と絵文字の両方を描いておき、設定（body の data-icons）でどちらかを見せる。自作駒などは絵文字だけ
+      const icon = svgEl('g', { class: 'cell-icon cell-icon--dot', transform: `translate(${cell.center[0]} ${cell.center[1]}) scale(${ICON_SCALE[board.shape]})` });
       icon.innerHTML = drawn;
-      g.append(icon);
+      const emoji = svgEl('text', { x: cell.center[0], y: cell.center[1], class: 'cell-icon cell-icon--emoji', 'font-size': ICON_SIZE[board.shape] });
+      emoji.textContent = piece.icon;
+      g.append(icon, emoji);
     } else {
       const label = svgEl('text', { x: cell.center[0], y: cell.center[1], class: piece ? 'cell-icon' : 'cell-coord' });
       if (piece) label.setAttribute('font-size', ICON_SIZE[board.shape]);

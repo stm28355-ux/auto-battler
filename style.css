@@ -93,6 +93,11 @@ select {
 .cell text { text-anchor: middle; dominant-baseline: central; pointer-events: none; }
 .cell-coord { font-size: 13px; fill: var(--muted); }
 g.cell-icon { pointer-events: none; }
+/* 駒の絵の切り替え：ドット絵のある駒は両方描いてあり、片方だけ見せる */
+body[data-icons="emoji"] .cell-icon--dot { display: none; }
+body:not([data-icons="emoji"]) .cell-icon--emoji { display: none; }
+.icon-toggle { margin-left: 8px; padding: 4px 10px; border-radius: 999px; font-size: 0.85rem; white-space: nowrap; }
+.icon-toggle + .help-btn { margin-left: 8px; }
 
 .hover-info { margin-top: 12px; min-height: 4.5em; }
 .muted { color: var(--muted); }

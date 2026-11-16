@@ -226,14 +226,65 @@ const SPRITES = {
   ],
   // 豹 🐆：斑点のある豹
   c_leopard: quad('y', 'o', { 2: '..............kk', 3: '..kk..k......kyk', 4: '.............kyk', 5: '.............kyk', 6: '......n..n..n', 7: '....n..n..n..n', 9: '.....n..n..n' }),
-  // 猪 🐗：牙のある猪
-  c_boar: quad('n', 'a', { 4: '.........k.k.k', 7: 'w', 8: 'ww' }),
-  // 熊 🐻：背の高い熊
-  c_bear: quad('n', 'a', { 3: '..kk..k..kkkk', 4: '........knnnnk', 5: '........nnnnnnk', 7: '.tt' }),
+  // 猪 🐗：低く構えた黒い猪（背の剛毛・白い牙・赤い目）
+  c_boar: [
+    '................',
+    '................',
+    '................',
+    '......k.k.k.k...',
+    '...kkkskskskskk.',
+    '..kssssssssssssk',
+    '.kaaaaaaaaaaaaak',
+    'karaaaaaaaaaaaak',
+    'kaaaaaaaaaaaaaak',
+    'ktaawaaaaaaaaak.',
+    '.kkwwaaaaaaaaak.',
+    '...kkkaakkkkaak.',
+    '....kaak...kaak.',
+    '....kaak...kaak.',
+    '....kkkk...kkkk.',
+    '................',
+  ],
+  // 熊 🐻：後ろ足で立ち上がり、爪を広げた熊
+  c_bear: [
+    '...kk......kk...',
+    '..knnk....knnk..',
+    '..knnkkkkkknnk..',
+    '...knnnnnnnnk...',
+    '...knknnnnknk...',
+    '...knnttttnnk...',
+    '...knntkktnnk...',
+    '..kknnttttnnkk..',
+    '.knnknnnnnnknnk.',
+    '.knnknnttnnknnk.',
+    '.kwwknttttnkwwk.',
+    '..kkknttttnkkk..',
+    '....knnnnnnk....',
+    '....knnkknnk....',
+    '...knnnkknnnk...',
+    '...kkkkkkkkkk...',
+  ],
   // 獅子 🦁：たてがみの獅子
   c_lion: quad('y', 'o', { 2: '..kkkkkk......kk', 3: '.kooooook....kok', 4: 'kooyyyook....kyk', 5: 'kooyyyyok....kyk', 6: 'koykyyyok', 7: 'kooyyyook', 8: '.kooooook' }),
-  // 古の巨獣 🦣：牙と長い鼻の巨獣
-  c_behemoth: quad('n', 'a', { 2: '.........kkkk', 3: '..kk..k.knnnnk', 4: '........nnnnnnk', 5: '........nnnnnnnk', 6: '..............nk', 8: 'knkww', 9: 'knk.ww', 10: 'knk', 11: 'knk', 12: '.k' }),
+  // 古の巨獣 🦣：正面から見た巨獣（大きな頭・長い鼻・内に曲がる大牙）
+  c_behemoth: [
+    '.....kkkkkk.....',
+    '...kknnnnnnkk...',
+    '..knntttttnnnk..',
+    '.knnnttttnnnnnk.',
+    'knnnknnnnnnknnnk',
+    'knnnnnnnnnnnnnnk',
+    'knnkknnnnnnkknnk',
+    'kwkk.knnnnk.kkwk',
+    'kwk..knnnnk..kwk',
+    'kwk..knnnnk..kwk',
+    'kwwk.knnnnk.kwwk',
+    '.kwwkknnnnkkwwk.',
+    '..kkkkknnkkkkk..',
+    '..kaak.knnk.kaak',
+    '..kaak.knk..kaak',
+    '..kkkk..k...kkkk',
+  ],
 
   // ---- 機械 ----
   // 偵察機 🛸
